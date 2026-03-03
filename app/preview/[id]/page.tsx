@@ -1,5 +1,8 @@
 import { notFound } from 'next/navigation'
-import LandingPage from '@/components/LandingPage'
+import dynamic from 'next/dynamic'
+
+// Load LandingPage client-only — dnd-kit uses browser APIs that fail during SSR
+const LandingPage = dynamic(() => import('@/components/LandingPage'), { ssr: false })
 
 interface LandingPageData {
   agencyName: string
