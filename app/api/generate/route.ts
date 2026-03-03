@@ -3,9 +3,13 @@ import Anthropic from '@anthropic-ai/sdk'
 import * as cheerio from 'cheerio'
 import { v4 as uuidv4 } from 'uuid'
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
+function getAnthropicClient() {
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) {
+    throw new Error('ANTHROPIC_API_KEY environment variable is not set.')
+  }
+  return new Anthropic({ apiKey })
+}
 
 // In-memory store — persists for the lifetime of the server process.
 // Pages survive redeploys only if you attach a Render Disk and swap this
@@ -184,7 +188,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Call Claude
-    const message = await anthropic.messages.create({
+    const message = await getAnthropicClient().messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 2048,
       system: SYSTEM_PROMPT,
