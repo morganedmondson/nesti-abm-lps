@@ -6,6 +6,8 @@ interface LandingPageData {
   agencyLocation: string
   agencySpecialty: string
   agencyLogoUrl: string | null
+  contactName: string | null
+  contactFirstName: string | null
   heroHeadline: string
   heroSubheadline: string
   painPoints: Array<{ headline: string; description: string }>

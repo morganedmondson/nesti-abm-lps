@@ -28,6 +28,8 @@ interface LandingPageData {
   agencyLocation: string
   agencySpecialty: string
   agencyLogoUrl: string | null
+  contactName: string | null
+  contactFirstName: string | null
   heroHeadline: string
   heroSubheadline: string
   painPoints: Array<{ headline: string; description: string }>
@@ -556,7 +558,9 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
           </div>
           <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full mb-6">
             <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-            <span className="text-caption font-medium text-primary">Built for {data.agencyName} · {data.agencySpecialty}</span>
+            <span className="text-caption font-medium text-primary">
+              {data.contactFirstName ? `For ${data.contactFirstName} at ` : 'Built for '}{data.agencyName} · {data.agencySpecialty}
+            </span>
           </div>
           <h1 className="text-display font-semibold text-text max-w-3xl mx-auto mb-6 leading-tight">{data.heroHeadline}</h1>
           <p className="text-sub text-gray-60 max-w-2xl mx-auto mb-10">{data.heroSubheadline}</p>
@@ -667,7 +671,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
           <div className="flex items-center gap-4 text-caption text-gray-50">
             <a href="https://www.nesti.io" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">www.nesti.io</a>
             <span>·</span>
-            <span>Generated {generatedDate} for {data.agencyName}</span>
+            <span>Generated {generatedDate} for {data.contactFirstName ? `${data.contactFirstName} at ` : ''}{data.agencyName}</span>
           </div>
         </div>
       </footer>

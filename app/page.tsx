@@ -13,6 +13,7 @@ interface RecentGenerate {
 export default function HomePage() {
   const router = useRouter()
   const [url, setUrl] = useState('')
+  const [linkedIn, setLinkedIn] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [recents, setRecents] = useState<RecentGenerate[]>([])
@@ -52,7 +53,7 @@ export default function HomePage() {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: parsedUrl }),
+        body: JSON.stringify({ url: parsedUrl, linkedInUrl: linkedIn.trim() || null }),
       })
 
       const data = await res.json()
@@ -139,6 +140,30 @@ export default function HomePage() {
                     transition-all duration-150 placeholder:text-gray-50
                     disabled:opacity-50 disabled:cursor-not-allowed text-body"
                 />
+              </div>
+
+              <div>
+                <label htmlFor="linkedin" className="block text-small font-medium text-text mb-1.5">
+                  Contact&apos;s LinkedIn URL
+                  <span className="ml-1.5 text-caption font-normal text-gray-50">(optional — personalises copy with their name)</span>
+                </label>
+                <div className="relative">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-40" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/>
+                  </svg>
+                  <input
+                    id="linkedin"
+                    type="text"
+                    value={linkedIn}
+                    onChange={e => setLinkedIn(e.target.value)}
+                    placeholder="e.g. linkedin.com/in/james-smith"
+                    disabled={loading}
+                    className="w-full pl-9 pr-3 py-2.5 border border-gray-30 rounded-lg bg-surface text-text
+                      focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
+                      transition-all duration-150 placeholder:text-gray-50
+                      disabled:opacity-50 disabled:cursor-not-allowed text-body"
+                  />
+                </div>
               </div>
 
               {error && (
