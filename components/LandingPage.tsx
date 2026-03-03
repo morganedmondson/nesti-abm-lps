@@ -4,6 +4,7 @@ interface LandingPageData {
   agencyName: string
   agencyLocation: string
   agencySpecialty: string
+  agencyLogoUrl: string | null
   heroHeadline: string
   heroSubheadline: string
   painPoints: Array<{ headline: string; description: string }>
@@ -16,7 +17,11 @@ interface LandingPageData {
   generatedAt: string
 }
 
-// Inline SVG icons matching Lucide style
+// Nesti brand assets (sourced from nesti.io)
+const NESTI_LOGO_URL = 'https://framerusercontent.com/images/JzFfiaQX72q1RYQhXynCAACR8cY.png'
+const NESTI_MARK_URL = 'https://framerusercontent.com/images/ionFD7qGUhxkIz0wKQgEItnCSU.png'
+
+// Inline SVG icons
 const icons: Record<string, React.ReactNode> = {
   phone: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
@@ -51,12 +56,6 @@ const icons: Record<string, React.ReactNode> = {
       <polyline points="12 6 12 12 16 14"/>
     </svg>
   ),
-  'check-circle': (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-      <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
-      <polyline points="22 4 12 14.01 9 11.01"/>
-    </svg>
-  ),
   'arrow-right': (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
       <path d="M5 12h14M12 5l7 7-7 7"/>
@@ -71,32 +70,55 @@ const icons: Record<string, React.ReactNode> = {
 }
 
 function Icon({ name }: { name: string }) {
-  return icons[name] ?? icons.phone
+  return <>{icons[name] ?? icons.phone}</>
+}
+
+// Agency logo with graceful fallback to initials
+function AgencyLogo({ logoUrl, agencyName, className = '' }: { logoUrl: string | null; agencyName: string; className?: string }) {
+  if (!logoUrl) {
+    const initials = agencyName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+    return (
+      <div className={`bg-gray-20 border border-border rounded-lg flex items-center justify-center text-h3 font-bold text-gray-60 ${className}`}>
+        {initials}
+      </div>
+    )
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={logoUrl}
+      alt={`${agencyName} logo`}
+      className={`object-contain ${className}`}
+      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+    />
+  )
 }
 
 const CLIENTS = ['Fine & Country', 'Persimmon Homes', 'Richard James', 'Smart Property Group']
-
 const CRM_LOGOS = ['Reapit', 'Alto', 'Street.co.uk', 'Rex', 'Apex27', 'SME Professional']
 
 export default function LandingPage({ data }: { data: LandingPageData }) {
   const generatedDate = new Date(data.generatedAt).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
+    day: 'numeric', month: 'long', year: 'numeric',
   })
 
   return (
     <div className="min-h-screen bg-background font-sans">
+
       {/* ─── NAVBAR ─── */}
       <nav className="border-b border-border bg-surface/95 backdrop-blur-sm sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <span className="text-h3 font-bold text-text tracking-tight">
-            nesti<span className="text-primary">.</span>
-          </span>
+          {/* Nesti logo */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={NESTI_LOGO_URL} alt="Nesti" className="h-7 w-auto" />
+
           <div className="flex items-center gap-3">
-            <span className="hidden sm:inline text-caption text-gray-50 border border-border rounded-full px-3 py-1">
-              Personalised for {data.agencyName}
-            </span>
+            {/* Agency logo pill */}
+            {data.agencyLogoUrl && (
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gray-10 border border-border rounded-full">
+                <AgencyLogo logoUrl={data.agencyLogoUrl} agencyName={data.agencyName} className="h-5 w-auto max-w-[80px]" />
+              </div>
+            )}
             <a
               href="https://www.nesti.io"
               target="_blank"
@@ -114,8 +136,16 @@ export default function LandingPage({ data }: { data: LandingPageData }) {
       {/* ─── HERO ─── */}
       <section className="bg-surface border-b border-border">
         <div className="max-w-6xl mx-auto px-6 py-20 text-center">
-          {/* Personalisation badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full mb-8">
+
+          {/* Agency × Nesti partnership mark */}
+          <div className="flex items-center justify-center gap-4 mb-8">
+            <AgencyLogo logoUrl={data.agencyLogoUrl} agencyName={data.agencyName} className="h-10 w-auto max-w-[120px]" />
+            <span className="text-gray-40 text-h2 font-light">×</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={NESTI_MARK_URL} alt="Nesti" className="h-10 w-auto" />
+          </div>
+
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full mb-6">
             <span className="w-1.5 h-1.5 rounded-full bg-primary" />
             <span className="text-caption font-medium text-primary">
               Built for {data.agencyName} · {data.agencySpecialty}
@@ -178,13 +208,9 @@ export default function LandingPage({ data }: { data: LandingPageData }) {
               The challenges holding {data.agencyName} back
             </h2>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {data.painPoints.map((pain, i) => (
-              <div
-                key={i}
-                className="bg-surface border border-border rounded-xl p-6 shadow-soft hover:shadow-elevated hover:-translate-y-0.5 transition-all duration-200"
-              >
+              <div key={i} className="bg-surface border border-border rounded-xl p-6 shadow-soft hover:shadow-elevated hover:-translate-y-0.5 transition-all duration-200">
                 <div className="w-8 h-8 rounded-lg bg-destructive/10 text-destructive flex items-center justify-center mb-4">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
                     <circle cx="12" cy="12" r="10"/>
@@ -210,14 +236,10 @@ export default function LandingPage({ data }: { data: LandingPageData }) {
               Up and running in days, not months. No complicated setup, no IT headaches.
             </p>
           </div>
-
-          <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Connecting line (desktop) */}
-            <div className="hidden md:block absolute top-8 left-1/6 right-1/6 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {data.howItWorks.map((step, i) => (
-              <div key={i} className="flex flex-col items-center text-center relative">
-                <div className="w-16 h-16 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center mb-5 relative z-10">
+              <div key={i} className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center mb-5">
                   <span className="text-h3 font-bold text-primary">{step.step}</span>
                 </div>
                 <h3 className="text-h3 font-semibold text-text mb-2">{step.title}</h3>
@@ -237,13 +259,9 @@ export default function LandingPage({ data }: { data: LandingPageData }) {
               Powerful features for {data.agencyLocation} agents
             </h2>
           </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {data.features.map((feature, i) => (
-              <div
-                key={i}
-                className="bg-surface border border-border rounded-xl p-6 shadow-soft hover:shadow-elevated hover:-translate-y-0.5 transition-all duration-200 group"
-              >
+              <div key={i} className="bg-surface border border-border rounded-xl p-6 shadow-soft hover:shadow-elevated hover:-translate-y-0.5 transition-all duration-200 group">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-white transition-colors duration-200">
                   <Icon name={feature.icon} />
                 </div>
@@ -258,15 +276,10 @@ export default function LandingPage({ data }: { data: LandingPageData }) {
       {/* ─── CRM INTEGRATIONS ─── */}
       <section className="py-16 px-6 bg-gray-10 border-y border-border">
         <div className="max-w-6xl mx-auto text-center">
-          <p className="text-caption font-medium text-gray-50 uppercase tracking-wider mb-6">
-            Seamless CRM integrations
-          </p>
+          <p className="text-caption font-medium text-gray-50 uppercase tracking-wider mb-6">Seamless CRM integrations</p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             {CRM_LOGOS.map(crm => (
-              <div
-                key={crm}
-                className="px-4 py-2 bg-surface border border-border rounded-lg text-small font-medium text-gray-60 shadow-sm"
-              >
+              <div key={crm} className="px-4 py-2 bg-surface border border-border rounded-lg text-small font-medium text-gray-60 shadow-sm">
                 {crm}
               </div>
             ))}
@@ -317,9 +330,19 @@ export default function LandingPage({ data }: { data: LandingPageData }) {
         </div>
       </section>
 
-      {/* ─── CTA SECTION ─── */}
+      {/* ─── CTA ─── */}
       <section className="py-20 px-6 bg-primary">
         <div className="max-w-3xl mx-auto text-center">
+          {/* Agency logo on CTA section */}
+          {data.agencyLogoUrl && (
+            <div className="flex items-center justify-center gap-3 mb-8">
+              <AgencyLogo logoUrl={data.agencyLogoUrl} agencyName={data.agencyName} className="h-8 w-auto max-w-[100px] brightness-0 invert opacity-70" />
+              <span className="text-primary-contrast/50 text-h3 font-light">×</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={NESTI_MARK_URL} alt="Nesti" className="h-8 w-auto brightness-0 invert opacity-70" />
+            </div>
+          )}
+
           <h2 className="text-h1 font-semibold text-primary-contrast mb-4">
             {data.ctaHeadline}
           </h2>
@@ -351,7 +374,7 @@ export default function LandingPage({ data }: { data: LandingPageData }) {
             </a>
           </div>
 
-          <div className="flex items-center justify-center gap-6 mt-8">
+          <div className="flex flex-wrap items-center justify-center gap-6 mt-8">
             {['No long-term contracts', 'Free setup support', 'Live in under a week'].map(item => (
               <div key={item} className="flex items-center gap-1.5">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-primary-contrast/70">
@@ -367,12 +390,15 @@ export default function LandingPage({ data }: { data: LandingPageData }) {
       {/* ─── FOOTER ─── */}
       <footer className="bg-surface border-t border-border py-8 px-6">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="text-h3 font-bold text-text tracking-tight">
-              nesti<span className="text-primary">.</span>
-            </span>
-            <span className="text-caption text-gray-40">|</span>
-            <span className="text-caption text-gray-50">AI call handling for estate agents</span>
+          <div className="flex items-center gap-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={NESTI_LOGO_URL} alt="Nesti" className="h-6 w-auto" />
+            {data.agencyLogoUrl && (
+              <>
+                <span className="text-gray-40">×</span>
+                <AgencyLogo logoUrl={data.agencyLogoUrl} agencyName={data.agencyName} className="h-6 w-auto max-w-[80px]" />
+              </>
+            )}
           </div>
           <div className="flex items-center gap-4 text-caption text-gray-50">
             <a href="https://www.nesti.io" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">www.nesti.io</a>

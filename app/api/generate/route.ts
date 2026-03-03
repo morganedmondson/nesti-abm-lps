@@ -12,14 +12,13 @@ function getAnthropicClient() {
 }
 
 // In-memory store — persists for the lifetime of the server process.
-// Pages survive redeploys only if you attach a Render Disk and swap this
-// back to file-based storage (see DATA_DIR pattern in git history).
 const store = new Map<string, LandingPageData>()
 
 interface LandingPageData {
   agencyName: string
   agencyLocation: string
   agencySpecialty: string
+  agencyLogoUrl: string | null
   heroHeadline: string
   heroSubheadline: string
   painPoints: Array<{ headline: string; description: string }>
@@ -32,7 +31,70 @@ interface LandingPageData {
   generatedAt: string
 }
 
-async function scrapeWebsite(url: string): Promise<string> {
+function resolveUrl(base: URL, href: string): string | null {
+  if (!href || href.startsWith('data:')) return null
+  try {
+    return new URL(href, base).href
+  } catch {
+    return null
+  }
+}
+
+function extractLogoUrl(base: URL, $: ReturnType<typeof cheerio.load>): string | null {
+  // 1. Apple touch icon — high-quality, purpose-built brand asset
+  const apple = $('link[rel="apple-touch-icon"]').first().attr('href')
+  if (apple) {
+    const resolved = resolveUrl(base, apple)
+    if (resolved) return resolved
+  }
+
+  // 2. OG image — usually a branded image
+  const og = $('meta[property="og:image"]').attr('content')
+  if (og) {
+    const resolved = resolveUrl(base, og)
+    if (resolved) return resolved
+  }
+
+  // 3. img tag in header/nav with "logo" in src, alt, class, or id
+  let logoUrl: string | null = null
+  $('header img, nav img, [class*="header"] img, [class*="nav"] img, [id*="header"] img').each((_, el) => {
+    if (logoUrl) return
+    const src = $(el).attr('src') || ''
+    const alt = $(el).attr('alt') || ''
+    const cls = $(el).attr('class') || ''
+    const id = $(el).attr('id') || ''
+    if (/logo/i.test(src + alt + cls + id)) {
+      const resolved = resolveUrl(base, src)
+      if (resolved) logoUrl = resolved
+    }
+  })
+  if (logoUrl) return logoUrl
+
+  // 4. Any img anywhere with "logo" in src/alt/class
+  $('img').each((_, el) => {
+    if (logoUrl) return
+    const src = $(el).attr('src') || ''
+    const alt = $(el).attr('alt') || ''
+    const cls = $(el).attr('class') || ''
+    if (/logo/i.test(src + alt + cls)) {
+      const resolved = resolveUrl(base, src)
+      if (resolved) logoUrl = resolved
+    }
+  })
+  if (logoUrl) return logoUrl
+
+  // 5. Favicon as last resort
+  const favicon =
+    $('link[rel="icon"][type="image/png"]').first().attr('href') ||
+    $('link[rel="apple-touch-icon-precomposed"]').first().attr('href') ||
+    $('link[rel="icon"]').first().attr('href') ||
+    $('link[rel="shortcut icon"]').first().attr('href')
+  if (favicon) return resolveUrl(base, favicon)
+
+  return null
+}
+
+async function scrapeWebsite(url: string): Promise<{ content: string; logoUrl: string | null }> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 12000)
 
@@ -52,49 +114,41 @@ async function scrapeWebsite(url: string): Promise<string> {
     clearTimeout(timeout)
   }
 
+  const base = new URL(url)
   const $ = cheerio.load(html)
 
-  // Remove noise
+  // Extract logo before removing elements
+  const logoUrl = extractLogoUrl(base, $)
+
+  // Remove noise for text extraction
   $('script, style, noscript, nav, footer, header, iframe, img, svg, [aria-hidden="true"]').remove()
 
   const parts: string[] = []
 
-  // Title
   const title = $('title').text().trim()
   if (title) parts.push(`Page title: ${title}`)
 
-  // Meta description
   const metaDesc = $('meta[name="description"]').attr('content') || ''
   if (metaDesc) parts.push(`Meta description: ${metaDesc}`)
 
-  // OG title / description
   const ogTitle = $('meta[property="og:title"]').attr('content') || ''
   if (ogTitle && ogTitle !== title) parts.push(`OG title: ${ogTitle}`)
 
-  // Headings
   const headings: string[] = []
   $('h1, h2, h3').each((_, el) => {
     const text = $(el).text().trim()
-    if (text && text.length > 2 && text.length < 200) {
-      headings.push(text)
-    }
+    if (text && text.length > 2 && text.length < 200) headings.push(text)
   })
   if (headings.length) parts.push(`Headings: ${headings.slice(0, 20).join(' | ')}`)
 
-  // Paragraphs
   const paras: string[] = []
   $('p').each((_, el) => {
     const text = $(el).text().trim()
-    if (text.length > 30 && text.length < 400) {
-      paras.push(text)
-    }
+    if (text.length > 30 && text.length < 400) paras.push(text)
   })
   if (paras.length) parts.push(`Content:\n${paras.slice(0, 15).join('\n')}`)
 
-  const combined = parts.join('\n\n')
-
-  // Truncate to ~3000 chars for the prompt
-  return combined.slice(0, 3000)
+  return { content: parts.join('\n\n').slice(0, 3000), logoUrl }
 }
 
 const SYSTEM_PROMPT = `You are a persuasive B2B sales copywriter for Nesti — an AI call-handling platform built specifically for UK estate and letting agents.
@@ -157,7 +211,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'A URL is required.' }, { status: 400 })
     }
 
-    // Validate URL
     let parsedUrl: URL
     try {
       parsedUrl = new URL(url)
@@ -169,10 +222,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Only HTTP and HTTPS URLs are supported.' }, { status: 400 })
     }
 
-    // Scrape the website
-    let scrapedContent: string
+    let scraped: { content: string; logoUrl: string | null }
     try {
-      scrapedContent = await scrapeWebsite(url)
+      scraped = await scrapeWebsite(url)
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error'
       if (msg.includes('abort') || msg.includes('timeout')) {
@@ -181,13 +233,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Could not fetch that website: ${msg}` }, { status: 400 })
     }
 
-    if (!scrapedContent || scrapedContent.length < 50) {
+    if (!scraped.content || scraped.content.length < 50) {
       return NextResponse.json({
         error: 'Could not extract enough content from that website. It may require JavaScript to render or block automated access.',
       }, { status: 400 })
     }
 
-    // Call Claude
     const message = await getAnthropicClient().messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 2048,
@@ -195,19 +246,16 @@ export async function POST(req: NextRequest) {
       messages: [
         {
           role: 'user',
-          content: `Here is the content scraped from ${url}:\n\n${scrapedContent}\n\nGenerate the personalised Nesti landing page JSON for this agency. Return ONLY valid JSON, no other text.`,
+          content: `Here is the content scraped from ${url}:\n\n${scraped.content}\n\nGenerate the personalised Nesti landing page JSON for this agency. Return ONLY valid JSON, no other text.`,
         },
       ],
     })
 
     const rawContent = message.content[0]
-    if (rawContent.type !== 'text') {
-      throw new Error('Unexpected response type from Claude')
-    }
+    if (rawContent.type !== 'text') throw new Error('Unexpected response type from Claude')
 
-    let pageData: Omit<LandingPageData, 'sourceUrl' | 'generatedAt'>
+    let pageData: Omit<LandingPageData, 'agencyLogoUrl' | 'sourceUrl' | 'generatedAt'>
     try {
-      // Strip any accidental markdown fences
       const jsonText = rawContent.text
         .replace(/^```json\s*/i, '')
         .replace(/^```\s*/i, '')
@@ -220,6 +268,7 @@ export async function POST(req: NextRequest) {
 
     const fullData: LandingPageData = {
       ...pageData,
+      agencyLogoUrl: scraped.logoUrl,
       sourceUrl: url,
       generatedAt: new Date().toISOString(),
     }
