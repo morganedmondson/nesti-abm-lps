@@ -1,8 +1,5 @@
 import { notFound } from 'next/navigation'
-import dynamic from 'next/dynamic'
-
-// Load LandingPage client-only — dnd-kit uses browser APIs that fail during SSR
-const LandingPage = dynamic(() => import('@/components/LandingPage'), { ssr: false })
+import ClientPage from './ClientPage'
 
 interface LandingPageData {
   agencyName: string
@@ -46,5 +43,5 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
 export default async function PreviewPage({ params }: { params: { id: string } }) {
   const data = await getPageData(params.id)
   if (!data) notFound()
-  return <LandingPage data={data} pageId={params.id} />
+  return <ClientPage data={data} pageId={params.id} />
 }
