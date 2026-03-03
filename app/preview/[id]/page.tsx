@@ -43,5 +43,5 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
 export default async function PreviewPage({ params }: { params: { id: string } }) {
   const data = await getPageData(params.id)
   if (!data) notFound()
-  return <LandingPage data={data} />
+  return <LandingPage data={data} pageId={params.id} />
 }
