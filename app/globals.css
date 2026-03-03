@@ -1,0 +1,156 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Primary Action Colors */
+  --primary: #2764EB;
+  --primary-hover: #1e56d1;
+  --primary-active: #1a4bb8;
+  --primary-contrast: #FFFFFF;
+
+  /* Content Colors */
+  --text: #0E121B;
+  --surface: #FFFFFF;
+  --background: #F9FAFB;
+
+  /* Semantic Colors */
+  --destructive: #D32F2F;
+  --success: #388E3C;
+  --alert: #F57C00;
+
+  /* Border & Dividers */
+  --border: #E3E4E9;
+
+  /* Gray Scale */
+  --gray-10: #F7F7F7;
+  --gray-20: #F2F2F2;
+  --gray-30: #E3E4E9;
+  --gray-40: #C7C7C7;
+  --gray-50: #737373;
+  --gray-60: #636363;
+  --gray-70: #6A717F;
+  --gray-80: #1A1A1A;
+
+  /* Typography */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+
+  /* Type Scale */
+  --text-display: 44px;
+  --text-h1: 32px;
+  --text-h2: 24px;
+  --text-h3: 18px;
+  --text-body: 14px;
+  --text-small: 13px;
+  --text-caption: 11px;
+
+  /* Font Weights */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* Spacing (4px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --space-32: 128px;
+
+  /* Border Radius */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px -2px rgba(0, 0, 0, 0.06);
+  --shadow-elevated: 0 2px 8px -2px rgba(0, 0, 0, 0.08), 0 8px 20px -4px rgba(0, 0, 0, 0.07);
+  --shadow-glow: 0 0 0 1px rgba(39, 100, 235, 0.08), 0 0 0 4px rgba(39, 100, 235, 0.06);
+  --shadow-input: 0 2px 6px -1px rgba(0, 0, 0, 0.06), 0 8px 24px -4px rgba(0, 0, 0, 0.04);
+
+  /* Timing */
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* Body Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html, body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  font-family: var(--font-family);
+}
+
+body {
+  color: var(--text);
+  background: var(--background);
+  min-height: 100vh;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Focus Ring */
+*:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Text Selection */
+::selection {
+  background: var(--primary);
+  color: var(--primary-contrast);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-50);
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
