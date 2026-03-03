@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import * as cheerio from 'cheerio'
 import { v4 as uuidv4 } from 'uuid'
-import { writeFile, mkdir } from 'fs/promises'
-import path from 'path'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 })
 
-const DATA_DIR = path.join(process.cwd(), 'data')
+// In-memory store — persists for the lifetime of the server process.
+// Pages survive redeploys only if you attach a Render Disk and swap this
+// back to file-based storage (see DATA_DIR pattern in git history).
+const store = new Map<string, LandingPageData>()
 
 interface LandingPageData {
   agencyName: string
@@ -219,10 +220,8 @@ export async function POST(req: NextRequest) {
       generatedAt: new Date().toISOString(),
     }
 
-    // Persist to disk
     const id = uuidv4()
-    await mkdir(DATA_DIR, { recursive: true })
-    await writeFile(path.join(DATA_DIR, `${id}.json`), JSON.stringify(fullData, null, 2))
+    store.set(id, fullData)
 
     return NextResponse.json({ id, agencyName: fullData.agencyName })
   } catch (err) {
@@ -230,4 +229,16 @@ export async function POST(req: NextRequest) {
     const message = err instanceof Error ? err.message : 'An unexpected error occurred.'
     return NextResponse.json({ error: message }, { status: 500 })
   }
+}
+
+export async function GET(req: NextRequest) {
+  const id = req.nextUrl.searchParams.get('id')
+  if (!id || !/^[0-9a-f-]{36}$/.test(id)) {
+    return NextResponse.json({ error: 'Invalid id.' }, { status: 400 })
+  }
+  const data = store.get(id)
+  if (!data) {
+    return NextResponse.json({ error: 'Not found.' }, { status: 404 })
+  }
+  return NextResponse.json(data)
 }

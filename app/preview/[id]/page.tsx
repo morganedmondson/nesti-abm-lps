@@ -1,6 +1,4 @@
 import { notFound } from 'next/navigation'
-import { readFile } from 'fs/promises'
-import path from 'path'
 import LandingPage from '@/components/LandingPage'
 
 interface LandingPageData {
@@ -20,13 +18,13 @@ interface LandingPageData {
 }
 
 async function getPageData(id: string): Promise<LandingPageData | null> {
-  // Basic validation to prevent path traversal
   if (!/^[0-9a-f-]{36}$/.test(id)) return null
 
   try {
-    const filePath = path.join(process.cwd(), 'data', `${id}.json`)
-    const raw = await readFile(filePath, 'utf-8')
-    return JSON.parse(raw) as LandingPageData
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'
+    const res = await fetch(`${baseUrl}/api/generate?id=${id}`, { cache: 'no-store' })
+    if (!res.ok) return null
+    return res.json()
   } catch {
     return null
   }
@@ -43,10 +41,6 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
 
 export default async function PreviewPage({ params }: { params: { id: string } }) {
   const data = await getPageData(params.id)
-
-  if (!data) {
-    notFound()
-  }
-
+  if (!data) notFound()
   return <LandingPage data={data} />
 }
