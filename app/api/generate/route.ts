@@ -368,3 +368,30 @@ export async function GET(req: NextRequest) {
   }
   return NextResponse.json(data)
 }
+
+export async function PUT(req: NextRequest) {
+  const id = req.nextUrl.searchParams.get('id')
+  if (!id || !/^[0-9a-f-]{36}$/.test(id)) {
+    return NextResponse.json({ error: 'Invalid id.' }, { status: 400 })
+  }
+  const existing = store.get(id)
+  if (!existing) {
+    return NextResponse.json({ error: 'Not found.' }, { status: 404 })
+  }
+  try {
+    const updates = await req.json()
+    // Only allow updating editable content fields
+    const allowed: (keyof LandingPageData)[] = [
+      'heroHeadline', 'heroSubheadline', 'agencyName', 'agencyLocation', 'agencySpecialty',
+      'painPoints', 'howItWorks', 'features', 'testimonial', 'ctaHeadline', 'ctaDescription',
+    ]
+    const filtered: Partial<LandingPageData> = {}
+    for (const key of allowed) {
+      if (key in updates) (filtered as Record<string, unknown>)[key] = updates[key]
+    }
+    store.set(id, { ...existing, ...filtered })
+    return NextResponse.json({ ok: true })
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 })
+  }
+}

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -82,14 +82,12 @@ const NESTI_MARK_URL = 'https://framerusercontent.com/images/ionFD7qGUhxkIz0wKQg
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function toSlidesEmbedUrl(raw: string): string {
-  // Accepts share/edit/pub URLs and converts to embed format
   const match = raw.match(/\/presentation\/d\/([a-zA-Z0-9_-]+)/)
   if (!match) return raw
   return `https://docs.google.com/presentation/d/${match[1]}/embed?start=false&loop=false&delayms=5000&rm=minimal`
 }
 
 function toCalendlyEmbedUrl(raw: string): string {
-  // Strip any trailing query params then add embed param
   const base = raw.split('?')[0].replace(/\/$/, '')
   return `${base}?embed_domain=${typeof window !== 'undefined' ? window.location.hostname : 'localhost'}&embed_type=Inline&hide_gdpr_banner=1`
 }
@@ -110,10 +108,51 @@ const icons: Record<string, React.ReactNode> = {
   calendar: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
   pencil: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
   check: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polyline points="20 6 9 17 4 12"/></svg>,
+  x: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  plus: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  eye: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+  upload: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>,
 }
 
 function Icon({ name }: { name: string }) {
   return <>{icons[name] ?? icons.phone}</>
+}
+
+// ─── Inline editable field ────────────────────────────────────────────────────
+
+function EditableField({
+  value,
+  onSave,
+  editMode,
+}: {
+  value: string
+  onSave: (v: string) => void
+  editMode: boolean
+}) {
+  const ref = useRef<HTMLSpanElement>(null)
+
+  // Sync DOM text when switching edit mode on, or when value changes externally
+  useEffect(() => {
+    if (ref.current) ref.current.textContent = value
+  }, [editMode, value])
+
+  if (!editMode) return <>{value}</>
+
+  return (
+    <span
+      ref={ref}
+      contentEditable
+      suppressContentEditableWarning
+      onBlur={e => {
+        const text = (e.currentTarget.textContent || '').trim()
+        if (text && text !== value) onSave(text)
+        else if (ref.current) ref.current.textContent = value
+      }}
+      className="cursor-text rounded-sm outline-dashed outline-2 outline-primary/40
+        hover:outline-primary/60 focus:outline-primary focus:bg-primary/5
+        px-0.5 -mx-0.5 transition-all duration-100"
+    />
+  )
 }
 
 // ─── Agency logo ──────────────────────────────────────────────────────────────
@@ -132,7 +171,19 @@ function AgencyLogo({ logoUrl, agencyName, className = '' }: { logoUrl: string |
 
 // ─── Sortable section wrapper ─────────────────────────────────────────────────
 
-function SortableSection({ id, label, children }: { id: string; label: string; children: React.ReactNode }) {
+function SortableSection({
+  id,
+  label,
+  children,
+  editMode,
+  onDelete,
+}: {
+  id: string
+  label: string
+  children: React.ReactNode
+  editMode: boolean
+  onDelete: (id: string) => void
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
 
   const style = {
@@ -142,7 +193,7 @@ function SortableSection({ id, label, children }: { id: string; label: string; c
 
   return (
     <div ref={setNodeRef} style={style} className={`relative group ${isDragging ? 'opacity-40 z-50' : ''}`}>
-      {/* Drag handle — appears on hover */}
+      {/* Drag handle */}
       <div
         {...attributes}
         {...listeners}
@@ -159,6 +210,24 @@ function SortableSection({ id, label, children }: { id: string; label: string; c
           {label}
         </span>
       </div>
+
+      {/* Delete button — only visible in edit mode */}
+      {editMode && (
+        <button
+          onClick={() => onDelete(id)}
+          title={`Remove "${label}" section`}
+          className="absolute right-4 top-4 z-10
+            opacity-0 group-hover:opacity-100 transition-opacity duration-150
+            flex items-center gap-1 px-2.5 py-1.5 rounded-lg
+            bg-surface border border-destructive/20 shadow-sm
+            text-destructive/60 hover:text-destructive hover:border-destructive hover:bg-destructive/5
+            transition-colors duration-150"
+        >
+          <Icon name="x" />
+          <span className="text-caption font-medium" style={{ fontSize: '10px' }}>Remove</span>
+        </button>
+      )}
+
       {children}
     </div>
   )
@@ -175,7 +244,7 @@ function IframeSection({
   urlValue,
   onSave,
   toEmbedUrl,
-  aspectRatio = '56.25%', // 16:9
+  aspectRatio = '56.25%',
 }: {
   id: string
   icon: string
@@ -225,7 +294,6 @@ function IframeSection({
                 loading="lazy"
               />
             </div>
-            {/* Edit overlay button */}
             <button
               onClick={() => { setDraft(urlValue); setEditing(true) }}
               className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5
@@ -303,11 +371,15 @@ const CRM_LOGOS = ['Reapit', 'Alto', 'Street.co.uk', 'Rex', 'Apex27', 'SME Profe
 
 export default function LandingPage({ data, pageId }: { data: LandingPageData; pageId: string }) {
   const [sections, setSections] = useState<SectionId[]>(DEFAULT_ORDER)
+  const [hiddenSections, setHiddenSections] = useState<Set<SectionId>>(new Set())
   const [slidesUrl, setSlidesUrl] = useState('')
   const [calendlyUrl, setCalendlyUrl] = useState('')
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [editMode, setEditMode] = useState(false)
+  const [editedData, setEditedData] = useState<LandingPageData>(() => ({ ...data }))
+  const [publishStatus, setPublishStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [showRestoreMenu, setShowRestoreMenu] = useState(false)
 
-  // Persist section order + iframe URLs to localStorage
   const storageKey = `nesti-page-${pageId}`
 
   useEffect(() => {
@@ -316,13 +388,19 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
       if (saved) {
         const parsed = JSON.parse(saved)
         if (parsed.sections) setSections(parsed.sections)
+        if (parsed.hiddenSections) setHiddenSections(new Set(parsed.hiddenSections))
         if (parsed.slidesUrl) setSlidesUrl(parsed.slidesUrl)
         if (parsed.calendlyUrl) setCalendlyUrl(parsed.calendlyUrl)
       }
     } catch { /* ignore */ }
   }, [storageKey])
 
-  const persist = useCallback((updates: Partial<{ sections: SectionId[]; slidesUrl: string; calendlyUrl: string }>) => {
+  const persist = useCallback((updates: Partial<{
+    sections: SectionId[]
+    hiddenSections: SectionId[]
+    slidesUrl: string
+    calendlyUrl: string
+  }>) => {
     try {
       const current = JSON.parse(localStorage.getItem(storageKey) || '{}')
       localStorage.setItem(storageKey, JSON.stringify({ ...current, ...updates }))
@@ -352,11 +430,104 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
     }
   }
 
+  function handleDeleteSection(id: string) {
+    setSections(prev => {
+      const next = prev.filter(s => s !== id)
+      persist({ sections: next })
+      return next
+    })
+    setHiddenSections(prev => {
+      const next = new Set([...prev, id as SectionId])
+      persist({ hiddenSections: Array.from(next) })
+      return next
+    })
+  }
+
+  function handleRestoreSection(id: SectionId) {
+    setSections(prev => {
+      const next = [...prev]
+      const defaultPos = DEFAULT_ORDER.indexOf(id)
+      // Insert at position matching DEFAULT_ORDER relative to existing sections
+      let insertAt = next.length
+      for (let i = defaultPos + 1; i < DEFAULT_ORDER.length; i++) {
+        const idx = next.indexOf(DEFAULT_ORDER[i])
+        if (idx !== -1) { insertAt = idx; break }
+      }
+      next.splice(insertAt, 0, id)
+      persist({ sections: next })
+      return next
+    })
+    setHiddenSections(prev => {
+      const next = new Set(prev)
+      next.delete(id)
+      persist({ hiddenSections: Array.from(next) })
+      return next
+    })
+    setShowRestoreMenu(false)
+  }
+
+  // ─── Data update helpers ─────────────────────────────────────────────────────
+
+  function updateData<K extends keyof LandingPageData>(field: K, value: LandingPageData[K]) {
+    setEditedData(prev => ({ ...prev, [field]: value }))
+  }
+
+  function updatePainPoint(i: number, key: 'headline' | 'description', value: string) {
+    setEditedData(prev => {
+      const updated = [...prev.painPoints]
+      updated[i] = { ...updated[i], [key]: value }
+      return { ...prev, painPoints: updated }
+    })
+  }
+
+  function updateHowItWorks(i: number, key: 'title' | 'description', value: string) {
+    setEditedData(prev => {
+      const updated = [...prev.howItWorks]
+      updated[i] = { ...updated[i], [key]: value }
+      return { ...prev, howItWorks: updated }
+    })
+  }
+
+  function updateFeature(i: number, key: 'title' | 'description', value: string) {
+    setEditedData(prev => {
+      const updated = [...prev.features]
+      updated[i] = { ...updated[i], [key]: value }
+      return { ...prev, features: updated }
+    })
+  }
+
+  function updateTestimonial(key: 'quote' | 'author' | 'company', value: string) {
+    setEditedData(prev => ({ ...prev, testimonial: { ...prev.testimonial, [key]: value } }))
+  }
+
+  async function handlePublish() {
+    setPublishStatus('saving')
+    try {
+      const res = await fetch(`/api/generate?id=${pageId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editedData),
+      })
+      if (!res.ok) throw new Error('Failed to publish')
+      setPublishStatus('saved')
+      setTimeout(() => setPublishStatus('idle'), 3000)
+    } catch {
+      setPublishStatus('error')
+      setTimeout(() => setPublishStatus('idle'), 4000)
+    }
+  }
+
   const generatedDate = new Date(data.generatedAt).toLocaleDateString('en-GB', {
     day: 'numeric', month: 'long', year: 'numeric',
   })
 
-  // ─── Section renderers ──────────────────────────────────────────────────────
+  // ─── Editable field shorthand ────────────────────────────────────────────────
+
+  function ef(value: string, onSave: (v: string) => void) {
+    return <EditableField value={value} onSave={onSave} editMode={editMode} />
+  }
+
+  // ─── Section renderers ───────────────────────────────────────────────────────
 
   function renderSection(id: SectionId) {
     switch (id) {
@@ -366,18 +537,24 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
             <div className="max-w-6xl mx-auto">
               <div className="text-center mb-12">
                 <p className="text-caption font-medium text-primary uppercase tracking-wider mb-2">Sound familiar?</p>
-                <h2 className="text-h1 font-semibold text-text">The challenges holding {data.agencyName} back</h2>
+                <h2 className="text-h1 font-semibold text-text">
+                  The challenges holding {ef(editedData.agencyName, v => updateData('agencyName', v))} back
+                </h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {data.painPoints.map((pain, i) => (
+                {editedData.painPoints.map((pain, i) => (
                   <div key={i} className="bg-surface border border-border rounded-xl p-6 shadow-soft hover:shadow-elevated hover:-translate-y-0.5 transition-all duration-200">
                     <div className="w-8 h-8 rounded-lg bg-destructive/10 text-destructive flex items-center justify-center mb-4">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
                         <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                       </svg>
                     </div>
-                    <h3 className="text-h3 font-semibold text-text mb-2">{pain.headline}</h3>
-                    <p className="text-body text-gray-60">{pain.description}</p>
+                    <h3 className="text-h3 font-semibold text-text mb-2">
+                      {ef(pain.headline, v => updatePainPoint(i, 'headline', v))}
+                    </h3>
+                    <p className="text-body text-gray-60">
+                      {ef(pain.description, v => updatePainPoint(i, 'description', v))}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -395,13 +572,17 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
                 <p className="text-body text-gray-60 mt-3 max-w-xl mx-auto">Up and running in days, not months. No complicated setup, no IT headaches.</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {data.howItWorks.map((step, i) => (
+                {editedData.howItWorks.map((step, i) => (
                   <div key={i} className="flex flex-col items-center text-center">
                     <div className="w-16 h-16 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center mb-5">
                       <span className="text-h3 font-bold text-primary">{step.step}</span>
                     </div>
-                    <h3 className="text-h3 font-semibold text-text mb-2">{step.title}</h3>
-                    <p className="text-body text-gray-60">{step.description}</p>
+                    <h3 className="text-h3 font-semibold text-text mb-2">
+                      {ef(step.title, v => updateHowItWorks(i, 'title', v))}
+                    </h3>
+                    <p className="text-body text-gray-60">
+                      {ef(step.description, v => updateHowItWorks(i, 'description', v))}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -415,16 +596,22 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
             <div className="max-w-6xl mx-auto">
               <div className="text-center mb-12">
                 <p className="text-caption font-medium text-primary uppercase tracking-wider mb-2">Everything you need</p>
-                <h2 className="text-h1 font-semibold text-text">Powerful features for {data.agencyLocation} agents</h2>
+                <h2 className="text-h1 font-semibold text-text">
+                  Powerful features for {ef(editedData.agencyLocation, v => updateData('agencyLocation', v))} agents
+                </h2>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {data.features.map((feature, i) => (
+                {editedData.features.map((feature, i) => (
                   <div key={i} className="bg-surface border border-border rounded-xl p-6 shadow-soft hover:shadow-elevated hover:-translate-y-0.5 transition-all duration-200 group">
                     <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-white transition-colors duration-200">
                       <Icon name={feature.icon} />
                     </div>
-                    <h3 className="text-h3 font-semibold text-text mb-2">{feature.title}</h3>
-                    <p className="text-body text-gray-60">{feature.description}</p>
+                    <h3 className="text-h3 font-semibold text-text mb-2">
+                      {ef(feature.title, v => updateFeature(i, 'title', v))}
+                    </h3>
+                    <p className="text-body text-gray-60">
+                      {ef(feature.description, v => updateFeature(i, 'description', v))}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -476,13 +663,19 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
             <div className="max-w-3xl mx-auto">
               <div className="bg-surface border border-border rounded-xl p-10 shadow-elevated text-center">
                 <div className="text-primary/30 flex justify-center mb-6"><Icon name="quote" /></div>
-                <blockquote className="text-sub font-medium text-text mb-6 leading-relaxed">&ldquo;{data.testimonial.quote}&rdquo;</blockquote>
+                <blockquote className="text-sub font-medium text-text mb-6 leading-relaxed">
+                  &ldquo;{ef(editedData.testimonial.quote, v => updateTestimonial('quote', v))}&rdquo;
+                </blockquote>
                 <div className="flex flex-col items-center">
                   <div className="w-10 h-10 rounded-full bg-primary/10 text-primary font-semibold text-body flex items-center justify-center mb-3">
-                    {data.testimonial.author.charAt(0)}
+                    {editedData.testimonial.author.charAt(0)}
                   </div>
-                  <p className="text-small font-semibold text-text">{data.testimonial.author}</p>
-                  <p className="text-caption text-gray-50 mt-0.5">{data.testimonial.company}</p>
+                  <p className="text-small font-semibold text-text">
+                    {ef(editedData.testimonial.author, v => updateTestimonial('author', v))}
+                  </p>
+                  <p className="text-caption text-gray-50 mt-0.5">
+                    {ef(editedData.testimonial.company, v => updateTestimonial('company', v))}
+                  </p>
                 </div>
               </div>
             </div>
@@ -495,7 +688,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
             id="slides"
             icon="slides"
             title="Watch Our Presentation"
-            description={`See exactly how Nesti transforms call handling for agencies like ${data.agencyName}.`}
+            description={`See exactly how Nesti transforms call handling for agencies like ${editedData.agencyName}.`}
             placeholder="Paste your Google Slides share URL here"
             urlValue={slidesUrl}
             onSave={url => { setSlidesUrl(url); persist({ slidesUrl: url }) }}
@@ -510,7 +703,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
             id="calendly"
             icon="calendar"
             title="Book a Demo"
-            description={`Schedule a personalised demo for ${data.agencyName} — takes just 20 minutes.`}
+            description={`Schedule a personalised demo for ${editedData.agencyName} — takes just 20 minutes.`}
             placeholder="Paste your Calendly URL here (e.g. https://calendly.com/your-name/nesti-demo)"
             urlValue={calendlyUrl}
             onSave={url => { setCalendlyUrl(url); persist({ calendlyUrl: url }) }}
@@ -521,7 +714,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
     }
   }
 
-  // ─── Render ─────────────────────────────────────────────────────────────────
+  // ─── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-background font-sans">
@@ -534,7 +727,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
           <div className="flex items-center gap-3">
             {data.agencyLogoUrl && (
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gray-10 border border-border rounded-full">
-                <AgencyLogo logoUrl={data.agencyLogoUrl} agencyName={data.agencyName} className="h-5 w-auto max-w-[80px]" />
+                <AgencyLogo logoUrl={data.agencyLogoUrl} agencyName={editedData.agencyName} className="h-5 w-auto max-w-[80px]" />
               </div>
             )}
             <a href="https://www.nesti.io" target="_blank" rel="noopener noreferrer"
@@ -547,11 +740,112 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
         </div>
       </nav>
 
+      {/* ─── EDIT TOOLBAR ─── */}
+      <div className="sticky top-14 z-10 bg-surface/95 backdrop-blur-sm border-b border-border px-6 py-2.5">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            {editMode ? (
+              <>
+                <span className="flex items-center gap-1.5 text-caption font-medium text-primary">
+                  <Icon name="pencil" />
+                  Edit mode — click any text to change it
+                </span>
+                <button
+                  onClick={() => setEditMode(false)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-caption font-medium text-gray-60
+                    border border-border rounded-lg hover:bg-gray-10 transition-colors"
+                >
+                  <Icon name="eye" />
+                  Preview
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setEditMode(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-caption font-medium text-gray-60
+                  border border-border rounded-lg hover:bg-gray-10 hover:text-text transition-colors"
+              >
+                <Icon name="pencil" />
+                Edit Page
+              </button>
+            )}
+
+            {/* Restore deleted sections */}
+            {hiddenSections.size > 0 && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowRestoreMenu(v => !v)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-caption font-medium text-gray-60
+                    border border-border rounded-lg hover:bg-gray-10 hover:text-text transition-colors"
+                >
+                  <Icon name="plus" />
+                  Restore section ({hiddenSections.size})
+                </button>
+                {showRestoreMenu && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowRestoreMenu(false)} />
+                    <div className="absolute left-0 top-full mt-1 bg-surface border border-border rounded-xl shadow-elevated z-50 py-1 min-w-[180px]">
+                      {Array.from(hiddenSections).map(id => (
+                        <button
+                          key={id}
+                          onClick={() => handleRestoreSection(id)}
+                          className="w-full text-left px-4 py-2.5 text-small text-text hover:bg-gray-10 flex items-center gap-2 transition-colors"
+                        >
+                          <Icon name="plus" />
+                          {SECTION_LABELS[id]}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Publish button */}
+          <button
+            onClick={handlePublish}
+            disabled={publishStatus === 'saving'}
+            className={`flex items-center gap-2 px-4 py-2 text-small font-semibold rounded-lg
+              shadow-sm transition-all duration-150
+              ${publishStatus === 'saved'
+                ? 'bg-green-500 text-white cursor-default'
+                : publishStatus === 'error'
+                  ? 'bg-destructive text-white'
+                  : 'bg-primary text-primary-contrast hover:bg-primary-hover hover:shadow-md hover:-translate-y-px active:bg-primary-active active:translate-y-0'
+              }
+              disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0`}
+          >
+            {publishStatus === 'saving' ? (
+              <>
+                <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                Saving…
+              </>
+            ) : publishStatus === 'saved' ? (
+              <>
+                <Icon name="check" />
+                Published!
+              </>
+            ) : publishStatus === 'error' ? (
+              <>Error — try again</>
+            ) : (
+              <>
+                <Icon name="upload" />
+                Publish Changes
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
       {/* ─── HERO (fixed, not draggable) ─── */}
       <section className="bg-surface border-b border-border">
         <div className="max-w-6xl mx-auto px-6 py-20 text-center">
           <div className="flex items-center justify-center gap-4 mb-8">
-            <AgencyLogo logoUrl={data.agencyLogoUrl} agencyName={data.agencyName} className="h-10 w-auto max-w-[120px]" />
+            <AgencyLogo logoUrl={data.agencyLogoUrl} agencyName={editedData.agencyName} className="h-10 w-auto max-w-[120px]" />
             <span className="text-gray-40 text-h2 font-light">×</span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={NESTI_MARK_URL} alt="Nesti" className="h-10 w-auto" />
@@ -559,11 +853,15 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
           <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full mb-6">
             <span className="w-1.5 h-1.5 rounded-full bg-primary" />
             <span className="text-caption font-medium text-primary">
-              {data.contactFirstName ? `For ${data.contactFirstName} at ` : 'Built for '}{data.agencyName} · {data.agencySpecialty}
+              {editedData.contactFirstName ? `For ${editedData.contactFirstName} at ` : 'Built for '}{editedData.agencyName} · {editedData.agencySpecialty}
             </span>
           </div>
-          <h1 className="text-display font-semibold text-text max-w-3xl mx-auto mb-6 leading-tight">{data.heroHeadline}</h1>
-          <p className="text-sub text-gray-60 max-w-2xl mx-auto mb-10">{data.heroSubheadline}</p>
+          <h1 className="text-display font-semibold text-text max-w-3xl mx-auto mb-6 leading-tight">
+            {ef(editedData.heroHeadline, v => updateData('heroHeadline', v))}
+          </h1>
+          <p className="text-sub text-gray-60 max-w-2xl mx-auto mb-10">
+            {ef(editedData.heroSubheadline, v => updateData('heroSubheadline', v))}
+          </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <a href="https://www.nesti.io" target="_blank" rel="noopener noreferrer"
               className="px-6 py-3 bg-primary text-primary-contrast text-body font-semibold rounded-lg
@@ -591,7 +889,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
       {/* ─── Drag hint ─── */}
       <div className="flex items-center justify-center gap-2 py-2 bg-gray-10 border-b border-border">
         <Icon name="grip" />
-        <span className="text-caption text-gray-50">Hover over any section and drag the handle to reorder</span>
+        <span className="text-caption text-gray-50">Hover over any section to drag, edit, or remove it</span>
       </div>
 
       {/* ─── DRAGGABLE SECTIONS ─── */}
@@ -603,13 +901,12 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
       >
         <SortableContext items={sections} strategy={verticalListSortingStrategy}>
           {sections.map(id => (
-            <SortableSection key={id} id={id} label={SECTION_LABELS[id]}>
+            <SortableSection key={id} id={id} label={SECTION_LABELS[id]} editMode={editMode} onDelete={handleDeleteSection}>
               {renderSection(id)}
             </SortableSection>
           ))}
         </SortableContext>
 
-        {/* Drag overlay — shows a ghost while dragging */}
         <DragOverlay>
           {activeId ? (
             <div className="bg-surface border-2 border-primary rounded-xl shadow-xl px-6 py-4 flex items-center gap-3 opacity-90">
@@ -625,14 +922,18 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
         <div className="max-w-3xl mx-auto text-center">
           {data.agencyLogoUrl && (
             <div className="flex items-center justify-center gap-3 mb-8">
-              <AgencyLogo logoUrl={data.agencyLogoUrl} agencyName={data.agencyName} className="h-8 w-auto max-w-[100px] brightness-0 invert opacity-70" />
+              <AgencyLogo logoUrl={data.agencyLogoUrl} agencyName={editedData.agencyName} className="h-8 w-auto max-w-[100px] brightness-0 invert opacity-70" />
               <span className="text-primary-contrast/50 text-h3 font-light">×</span>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={NESTI_MARK_URL} alt="Nesti" className="h-8 w-auto brightness-0 invert opacity-70" />
             </div>
           )}
-          <h2 className="text-h1 font-semibold text-primary-contrast mb-4">{data.ctaHeadline}</h2>
-          <p className="text-body text-primary-contrast/80 mb-10 max-w-xl mx-auto">{data.ctaDescription}</p>
+          <h2 className="text-h1 font-semibold text-primary-contrast mb-4">
+            {ef(editedData.ctaHeadline, v => updateData('ctaHeadline', v))}
+          </h2>
+          <p className="text-body text-primary-contrast/80 mb-10 max-w-xl mx-auto">
+            {ef(editedData.ctaDescription, v => updateData('ctaDescription', v))}
+          </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <a href="https://www.nesti.io" target="_blank" rel="noopener noreferrer"
               className="px-8 py-3.5 bg-primary-contrast text-primary text-body font-semibold rounded-lg
@@ -665,13 +966,13 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
             <img src={NESTI_LOGO_URL} alt="Nesti" className="h-6 w-auto" />
             {data.agencyLogoUrl && (
               <><span className="text-gray-40">×</span>
-              <AgencyLogo logoUrl={data.agencyLogoUrl} agencyName={data.agencyName} className="h-6 w-auto max-w-[80px]" /></>
+              <AgencyLogo logoUrl={data.agencyLogoUrl} agencyName={editedData.agencyName} className="h-6 w-auto max-w-[80px]" /></>
             )}
           </div>
           <div className="flex items-center gap-4 text-caption text-gray-50">
             <a href="https://www.nesti.io" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">www.nesti.io</a>
             <span>·</span>
-            <span>Generated {generatedDate} for {data.contactFirstName ? `${data.contactFirstName} at ` : ''}{data.agencyName}</span>
+            <span>Generated {generatedDate} for {editedData.contactFirstName ? `${editedData.contactFirstName} at ` : ''}{editedData.agencyName}</span>
           </div>
         </div>
       </footer>
