@@ -56,6 +56,10 @@ function downloadCSV(content: string, filename: string) {
 
 export default function HomePage() {
   const router = useRouter()
+  const [mounted, setMounted] = useState(false)
+  const [authed, setAuthed] = useState(false)
+  const [password, setPassword] = useState('')
+  const [authError, setAuthError] = useState('')
   const [activeTab, setActiveTab] = useState<'single' | 'batch'>('single')
 
   // Single form state
@@ -73,6 +77,10 @@ export default function HomePage() {
   const stopRef = useRef(false)
 
   useEffect(() => {
+    setMounted(true)
+    try {
+      if (sessionStorage.getItem('nesti-auth') === '1') setAuthed(true)
+    } catch { /* ignore */ }
     try {
       const stored = localStorage.getItem('nesti-recents')
       if (stored) setRecents(JSON.parse(stored))
@@ -82,6 +90,19 @@ export default function HomePage() {
       if (stored) setBatchResults(JSON.parse(stored))
     } catch { /* ignore */ }
   }, [])
+
+  // ─── Auth ──────────────────────────────────────────────────────────────────
+
+  function handleAuth(e: FormEvent) {
+    e.preventDefault()
+    if (password === 'Inchain') {
+      try { sessionStorage.setItem('nesti-auth', '1') } catch { /* ignore */ }
+      setAuthed(true)
+    } else {
+      setAuthError('Incorrect password. Please try again.')
+      setPassword('')
+    }
+  }
 
   // ─── Single generation ─────────────────────────────────────────────────────
 
@@ -191,6 +212,12 @@ export default function HomePage() {
     )
   }
 
+  function clearResults() {
+    setBatchResults([])
+    setBatchRows([])
+    try { localStorage.removeItem('nesti-batch-results') } catch { /* ignore */ }
+  }
+
   async function copyLink(slug: string | null, id: string | null) {
     const path = slug ? `/${slug}` : `/preview/${id}`
     try { await navigator.clipboard.writeText(`${window.location.origin}${path}`) } catch { /* ignore */ }
@@ -198,6 +225,38 @@ export default function HomePage() {
 
   const doneCount = batchResults.filter(r => r.status === 'done').length
   const failedCount = batchResults.filter(r => r.status === 'failed').length
+
+  if (!mounted) return null
+
+  if (!authed) return (
+    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+      <div className="w-full max-w-sm bg-surface border border-border rounded-2xl shadow-elevated p-8">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <div className="flex justify-center mb-6">
+          <img src="https://framerusercontent.com/images/JzFfiaQX72q1RYQhXynCAACR8cY.png" alt="Nesti" className="h-9 w-auto" />
+        </div>
+        <h1 className="text-h3 font-semibold text-text text-center mb-1">Admin access</h1>
+        <p className="text-caption text-gray-50 text-center mb-6">Enter your password to continue</p>
+        <form onSubmit={handleAuth} className="flex flex-col gap-3">
+          <input
+            autoFocus
+            type="password"
+            value={password}
+            onChange={e => { setPassword(e.target.value); setAuthError('') }}
+            placeholder="Password"
+            className="w-full px-3 py-2.5 border border-gray-30 rounded-lg bg-surface text-text text-body
+              focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-gray-50"
+          />
+          {authError && <p className="text-caption text-destructive">{authError}</p>}
+          <button type="submit" disabled={!password}
+            className="w-full px-4 py-2.5 bg-primary text-primary-contrast text-small font-semibold rounded-lg
+              hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+            Sign in
+          </button>
+        </form>
+      </div>
+    </div>
+  )
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -448,13 +507,20 @@ export default function HomePage() {
                       {doneCount > 0 && <span className="text-caption font-medium text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">{doneCount} done</span>}
                       {failedCount > 0 && <span className="text-caption font-medium text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">{failedCount} failed</span>}
                     </div>
-                    {doneCount > 0 && (
-                      <button onClick={downloadBatchResults}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-caption font-medium text-gray-60 border border-border rounded-lg hover:bg-gray-10 transition-colors">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                        Download CSV
+                    <div className="flex items-center gap-2">
+                      {doneCount > 0 && (
+                        <button onClick={downloadBatchResults}
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-caption font-medium text-gray-60 border border-border rounded-lg hover:bg-gray-10 transition-colors">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                          Download CSV
+                        </button>
+                      )}
+                      <button onClick={clearResults} disabled={batchRunning}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-caption font-medium text-destructive/70 border border-destructive/20 rounded-lg hover:bg-destructive/5 hover:text-destructive hover:border-destructive/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                        Clear
                       </button>
-                    )}
+                    </div>
                   </div>
                   <div className="max-h-80 overflow-y-auto divide-y divide-border">
                     {batchResults.map((result, i) => (
