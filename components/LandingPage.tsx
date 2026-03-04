@@ -358,11 +358,11 @@ function DriveEmbed({ label, urlValue, onSave }: { label: string; urlValue: stri
 
 const CRM_LOGOS: { name: string; logoUrl: string }[] = [
   { name: 'Reapit', logoUrl: 'https://cdn.prod.website-files.com/65cc1dfdc4913d1034befe43/65cd4892e588ed11b16e33d7_Reapit%20logo(1).svg' },
-  { name: 'Alto', logoUrl: 'https://alto.co.uk/wp-content/uploads/2020/07/Alto-Logo_transparent-black.png' },
+  { name: 'Alto', logoUrl: 'https://27b67461b6f5b0ef0f7f-4ed8056a596c81d3dd354ce52d883b92.ssl.cf3.rackcdn.com/x.dev/x/images/products/uploads/Alto_Logo_RGB_Orange_3273_380368bf0370d38df313421bcd8a32b3.png' },
   { name: 'Street.co.uk', logoUrl: 'https://cdn.prod.website-files.com/626a7c1738d51884ec5ac9d7/67336c2f745666127d1710be_Street-Logo-Vector.svg' },
   { name: 'Rex', logoUrl: 'https://cdn.prod.website-files.com/692cf39461ea1001ff1f070f/694758e9bcfc762a504d4d91_logo-rex%20logo%20form%20top.svg' },
   { name: 'Apex27', logoUrl: 'https://apex27.co.uk/img/logo_navy.png' },
-  { name: 'SME Professional', logoUrl: '' },
+  { name: 'SME Professional', logoUrl: 'https://www.propertymark.co.uk/static/93a3912d-bb27-44a0-abb12b89e567acc3/200x112_highestperformance__4a7c7e45a350/SME-Professional-logo.jpg' },
 ]
 
 // ─── Main component ───────────────────────────────────────────────────────────
