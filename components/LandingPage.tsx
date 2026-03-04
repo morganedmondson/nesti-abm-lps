@@ -80,18 +80,18 @@ const SECTION_LABELS: Record<SectionId, string> = {
 
 // ─── Brand assets ─────────────────────────────────────────────────────────────
 
-const NESTI_LOGO_URL = 'https://framerusercontent.com/images/JzFfiaQX72q1RYQhXynCAACR8cY.png'
-const NESTI_MARK_URL = 'https://framerusercontent.com/images/ionFD7qGUhxkIz0wKQgEItnCSU.png'
+const NESTI_LOGO_URL = '/NESTI-LOGO-BLACK.png'
+const NESTI_MARK_URL = '/NESTI-LOGO-BLACK.png'
 
 // ─── Client logos ─────────────────────────────────────────────────────────────
 
 const CLIENT_LOGOS: { name: string; logoUrl: string }[] = [
   { name: 'Fine & Country', logoUrl: 'https://devvlsnxxkrq9.cloudfront.net/prod/assets/logos/fc-logo.png' },
-  { name: 'Persimmon Homes', logoUrl: 'https://logo.clearbit.com/persimmonhomes.com' },
-  { name: 'Richard James', logoUrl: 'https://logo.clearbit.com/rjea.co.uk' },
-  { name: 'Smart Property Group', logoUrl: 'https://logo.clearbit.com/smartpg.co.uk' },
-  { name: 'The Letting Station', logoUrl: 'https://logo.clearbit.com/thelettingstation.co.uk' },
-  { name: 'Stephen Tew', logoUrl: 'https://logo.clearbit.com/stephentew.co.uk' },
+  { name: 'Persimmon Homes', logoUrl: 'https://www.persimmonhomes.com/media/os0ly03c/persimmon-logo-2022.png' },
+  { name: 'Richard James', logoUrl: 'https://richardjames.uk/wp-content/uploads/2020/10/RJ-Logo-Blue.png' },
+  { name: 'Smart Property Group', logoUrl: 'https://www.smartestateagent.co.uk/images/SmartPropertyGroup_Mono_White.png.pagespeed.ce.3DFH2vtCH9.png' },
+  { name: 'The Letting Station', logoUrl: 'https://thelettingstation.co.uk/assets/uploads/1622788844_Letting-Station-Logo.png' },
+  { name: 'Stephen Tew', logoUrl: 'https://stephentew.estate-track.co.uk/wp-content/uploads/2023/09/233875-logolight.png' },
 ]
 
 function ClientLogo({ name, logoUrl }: { name: string; logoUrl: string }) {
@@ -617,9 +617,8 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
                 <h2 className="text-h1 font-semibold text-text">Real examples of Nesti&apos;s AI voice agent</h2>
                 <p className="text-body text-gray-60 mt-3 max-w-xl mx-auto">Listen to how Nesti handles real inbound calls — just like a senior negotiator would.</p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <DriveEmbed label="Example call 1" urlValue={voiceUrl1} onSave={url => { setVoiceUrl1(url); persist({ voiceUrl1: url }) }} />
-                <DriveEmbed label="Example call 2" urlValue={voiceUrl2} onSave={url => { setVoiceUrl2(url); persist({ voiceUrl2: url }) }} />
+              <div className="max-w-3xl mx-auto">
+                <DriveEmbed label="Example call" urlValue={voiceUrl1} onSave={url => { setVoiceUrl1(url); persist({ voiceUrl1: url }) }} />
               </div>
             </div>
           </section>
