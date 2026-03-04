@@ -243,6 +243,7 @@ WRITING RULES (follow these strictly):
 - Never use the word "lead" or "leads"; use "applicant", "buyer", "seller", "vendor", "landlord", "tenant", or "enquiry" as appropriate to context
 - Write in natural estate and letting agency language; sound like an experienced property professional, not a generic tech marketer
 - Use short, punchy sentences. No waffle.
+- Use sentence case for all headings and titles (capitalise only the first word and proper nouns — never Title Case Every Word)
 
 RETURN: A single valid JSON object matching this exact schema — no markdown, no explanation, just the JSON:
 
@@ -268,7 +269,7 @@ RETURN: A single valid JSON object matching this exact schema — no markdown, n
     { "icon": "zap", "title": "string", "description": "string — 1-2 sentences" },
     { "icon": "mail", "title": "string", "description": "string — 1-2 sentences" },
     { "icon": "link", "title": "string", "description": "string — 1-2 sentences" },
-    { "icon": "clock", "title": "string", "description": "string — 1-2 sentences" }
+    { "icon": "settings", "title": "Deep customisation", "description": "string — 1-2 sentences about how Nesti AI can be configured to sound and behave exactly like your best negotiator, tailored to the specific agency's brand, tone, and process" }
   ],
   "testimonial": {
     "quote": "string — a compelling testimonial from a real or representative Nesti AI client",

@@ -67,15 +67,15 @@ const DEFAULT_ORDER: SectionId[] = [
 ]
 
 const SECTION_LABELS: Record<SectionId, string> = {
-  painPoints: 'Pain Points',
-  howItWorks: 'How It Works',
+  painPoints: 'Pain points',
+  howItWorks: 'How it works',
   features: 'Features',
-  integrations: 'CRM Integrations',
+  integrations: 'CRM integrations',
   stats: 'Stats',
-  voices: 'Voice Examples',
+  voices: 'Voice examples',
   testimonial: 'Testimonial',
   slides: 'Presentation',
-  calendly: 'Book a Demo',
+  calendly: 'Book a demo',
 }
 
 // ─── Brand assets ─────────────────────────────────────────────────────────────
@@ -205,6 +205,7 @@ const icons: Record<string, React.ReactNode> = {
   'external-link': <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>,
   mic: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>,
   video: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>,
+  settings: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>,
 }
 
 function Icon({ name }: { name: string }) {
@@ -314,7 +315,7 @@ function IframeSection({ id, icon, title, description, placeholder, urlValue, on
         </div>
         {embedUrl && !editing ? (
           <div className="relative rounded-xl overflow-hidden border border-border shadow-elevated">
-            <div style={{ paddingBottom: aspectRatio, position: 'relative', height: 0 }}>
+            <div style={aspectRatio.endsWith('px') ? { height: aspectRatio, position: 'relative' } : { paddingBottom: aspectRatio, position: 'relative', height: 0 }}>
               <iframe src={embedUrl} className="absolute inset-0 w-full h-full" frameBorder="0" allowFullScreen allow="autoplay" loading="lazy" />
             </div>
             {isEditor && (
@@ -369,7 +370,7 @@ function DriveEmbed({ label, urlValue, onSave, isEditor = false }: { label: stri
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-small font-semibold text-text text-center">{label}</p>
+      {label && <p className="text-small font-semibold text-text text-center">{label}</p>}
       {embedUrl && !editing ? (
         <div className="relative rounded-xl overflow-hidden border border-border shadow-soft">
           <div style={{ paddingBottom: '56.25%', position: 'relative', height: 0 }}>
@@ -709,16 +710,9 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
                 <p className="text-caption font-medium text-primary uppercase tracking-wider mb-2">Hear it in action</p>
                 <h2 className="text-h1 font-semibold text-text">Hear Nesti AI handle real calls</h2>
                 <p className="text-body text-gray-60 mt-3 max-w-xl mx-auto">Listen to how Nesti AI handles real inbound enquiries — exactly like a senior negotiator, available 24/7.</p>
-                {/* Animated waveform */}
-                <div className="flex items-end justify-center gap-[3px] h-9 mt-6">
-                  {[0.35, 0.6, 0.85, 0.55, 1, 0.7, 0.45, 0.9, 0.6, 0.4, 0.75, 0.5, 0.85, 0.65, 0.35].map((h, i) => (
-                    <span key={i} className="nesti-wave-bar rounded-full bg-primary/60 w-[3px]"
-                      style={{ height: `${h * 100}%`, animationDelay: `${i * 0.08}s` }} />
-                  ))}
-                </div>
               </div>
               <div className="max-w-3xl mx-auto">
-                <DriveEmbed label="Example call" urlValue={voiceUrl1} onSave={url => { setVoiceUrl1(url); persist({ voiceUrl1: url }) }} isEditor={isEditor} />
+                <DriveEmbed label="" urlValue={voiceUrl1} onSave={url => { setVoiceUrl1(url); persist({ voiceUrl1: url }) }} isEditor={isEditor} />
               </div>
             </div>
           </section>
@@ -746,7 +740,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
       case 'slides':
         if (!slidesUrl && !isEditor) return null
         return (
-          <IframeSection id="slides" icon="slides" title="Watch Our Presentation"
+          <IframeSection id="slides" icon="slides" title="Watch our presentation"
             description={`See exactly how Nesti AI transforms call handling for agencies like ${editedData.agencyName}.`}
             placeholder="Paste your Google Slides share URL here"
             urlValue={slidesUrl} onSave={url => { setSlidesUrl(url); persist({ slidesUrl: url }) }}
@@ -756,11 +750,11 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
       case 'calendly':
         if (!calendlyUrl && !isEditor) return null
         return (
-          <IframeSection id="calendly" icon="calendar" title="Book a Demo"
+          <IframeSection id="calendly" icon="calendar" title="Book a demo"
             description={`Schedule a personalised demo for ${editedData.agencyName}. Takes just 20 minutes.`}
             placeholder="Paste your Calendly URL here (e.g. https://calendly.com/your-name/nesti-demo)"
             urlValue={calendlyUrl} onSave={url => { setCalendlyUrl(url); persist({ calendlyUrl: url }) }}
-            toEmbedUrl={toCalendlyEmbedUrl} aspectRatio="100%" isEditor={isEditor} />
+            toEmbedUrl={toCalendlyEmbedUrl} aspectRatio="680px" isEditor={isEditor} />
         )
     }
   }
@@ -801,7 +795,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
             )}
             <a href={ctaUrl} target="_blank" rel="noopener noreferrer"
               className="px-4 py-2 bg-primary text-primary-contrast text-small font-semibold rounded-lg shadow-sm hover:bg-primary-hover hover:shadow-md hover:-translate-y-px active:bg-primary-active active:translate-y-0 transition-all duration-150">
-              Book a Demo
+              Book a demo
             </a>
           </div>
         </div>
@@ -824,7 +818,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
               ) : (
                 <button onClick={() => setEditMode(true)}
                   className="flex items-center gap-1.5 px-3 py-1.5 text-caption font-medium text-gray-60 border border-border rounded-lg hover:bg-gray-10 hover:text-text transition-colors">
-                  <Icon name="pencil" />Edit Page
+                  <Icon name="pencil" />Edit page
                 </button>
               )}
 
@@ -889,7 +883,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
               {publishStatus === 'saving' ? (<><svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Saving…</>)
                 : publishStatus === 'saved' ? (<><Icon name="check" />Published!</>)
                 : publishStatus === 'error' ? <>Error — try again</>
-                : (<><Icon name="upload" />Publish Changes</>)}
+                : (<><Icon name="upload" />Publish changes</>)}
             </button>
           </div>
 
@@ -949,9 +943,9 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
               className="px-6 py-3 bg-primary text-primary-contrast text-body font-semibold rounded-lg shadow-sm hover:bg-primary-hover hover:shadow-md hover:-translate-y-px active:bg-primary-active active:translate-y-0 transition-all duration-150 flex items-center gap-2 w-full sm:w-auto justify-center">
               Book a Free Demo <Icon name="arrow-right" />
             </a>
-            <a href={ctaUrl} target="_blank" rel="noopener noreferrer"
-              className="px-6 py-3 text-body font-medium text-text bg-surface border border-border rounded-lg hover:bg-gray-10 hover:border-gray-40 hover:shadow-sm hover:-translate-y-px active:bg-gray-20 active:translate-y-0 transition-all duration-150 w-full sm:w-auto text-center">
-              See How It Works
+            <a href="tel:+447727638641"
+              className="px-6 py-3 text-body font-medium text-text bg-surface border border-border rounded-lg hover:bg-gray-10 hover:border-gray-40 hover:shadow-sm hover:-translate-y-px active:bg-gray-20 active:translate-y-0 transition-all duration-150 w-full sm:w-auto text-center flex items-center gap-2 justify-center">
+              <Icon name="phone" />Try it — call our AI now
             </a>
           </div>
           {/* Trusted-by strip with real logos */}
@@ -1002,11 +996,11 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
             {/* Brand */}
             <div className="flex flex-col gap-4 max-w-xs">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={NESTI_LOGO_URL} alt="Nesti AI" className="h-7 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
+              <img src={NESTI_LOGO_URL} alt="Nesti AI" className="h-8 w-auto max-w-[160px] block object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
               <p className="text-body text-white/40">AI-enabled call handling built for UK estate and letting agents. Never miss an enquiry.</p>
               <a href={ctaUrl} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-small font-semibold rounded-lg hover:bg-primary-hover transition-colors w-fit">
-                Book a Demo <Icon name="arrow-right" />
+                Book a demo <Icon name="arrow-right" />
               </a>
             </div>
             {/* Links */}
@@ -1015,9 +1009,9 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
                 <p className="text-caption font-semibold uppercase tracking-widest mb-4 text-white/30">Product</p>
                 <div className="flex flex-col gap-3">
                   {[
-                    { label: 'How it works', href: 'https://www.nesti.io' },
-                    { label: 'CRM integrations', href: 'https://www.nesti.io' },
-                    { label: 'Pricing', href: 'https://www.nesti.io' },
+                    { label: 'How it works', href: 'https://www.nesti.io/#how-it-works' },
+                    { label: 'CRM integrations', href: 'https://www.nesti.io/integrations' },
+                    { label: 'Pricing', href: 'https://www.nesti.io/pricing' },
                     { label: 'Book a demo', href: ctaUrl },
                   ].map(l => (
                     <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer"
@@ -1031,9 +1025,9 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
                 <p className="text-caption font-semibold uppercase tracking-widest mb-4 text-white/30">Company</p>
                 <div className="flex flex-col gap-3">
                   {[
-                    { label: 'About Nesti AI', href: 'https://www.nesti.io' },
-                    { label: 'Contact us', href: 'https://www.nesti.io' },
-                    { label: 'Privacy policy', href: 'https://www.nesti.io' },
+                    { label: 'About Nesti AI', href: 'https://www.nesti.io/about' },
+                    { label: 'Blog', href: 'https://www.nesti.io/blog' },
+                    { label: 'Contact us', href: 'https://www.nesti.io/contact' },
                   ].map(l => (
                     <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer"
                       className="text-small text-white/50 hover:text-white transition-colors">
