@@ -56,11 +56,11 @@ type SectionId =
 
 const DEFAULT_ORDER: SectionId[] = [
   'painPoints',
+  'voices',
   'howItWorks',
   'features',
   'integrations',
   'stats',
-  'voices',
   'testimonial',
   'slides',
   'calendly',
@@ -128,6 +128,57 @@ function toDriveEmbedUrl(raw: string): string {
   const byParam = raw.match(/[?&]id=([a-zA-Z0-9_-]+)/)
   if (byParam) return `https://drive.google.com/file/d/${byParam[1]}/preview`
   return raw
+}
+
+// ─── Scroll-reveal hook ───────────────────────────────────────────────────────
+
+function useInView(threshold = 0.1) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [inView, setInView] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { setInView(true); obs.disconnect() }
+    }, { threshold })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [threshold])
+  return { ref, inView }
+}
+
+function AnimateIn({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
+  const { ref, inView } = useInView()
+  return (
+    <div ref={ref} className={className} style={{
+      opacity: inView ? 1 : 0,
+      transform: inView ? 'translateY(0)' : 'translateY(18px)',
+      transition: `opacity 0.55s ease ${delay}ms, transform 0.55s ease ${delay}ms`,
+    }}>
+      {children}
+    </div>
+  )
+}
+
+function AnimatedNumber({ display }: { display: string }) {
+  const { ref, inView } = useInView()
+  const match = display.match(/^(\D*)(\d+)(\D*)$/)
+  const [count, setCount] = useState(0)
+  useEffect(() => {
+    if (!inView || !match) return
+    const target = parseInt(match[2], 10)
+    const duration = 1400
+    const startTime = performance.now()
+    function step(now: number) {
+      const t = Math.min((now - startTime) / duration, 1)
+      const eased = 1 - Math.pow(1 - t, 3)
+      setCount(Math.round(eased * target))
+      if (t < 1) requestAnimationFrame(step)
+    }
+    requestAnimationFrame(step)
+  }, [inView, match])
+  if (!match) return <div ref={ref}>{display}</div>
+  return <div ref={ref}>{match[1]}{inView ? count : 0}{match[3]}</div>
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -533,13 +584,15 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {editedData.painPoints.map((pain, i) => (
-                  <div key={i} className="bg-surface border border-border rounded-xl p-6 shadow-soft hover:shadow-elevated hover:-translate-y-0.5 transition-all duration-200">
-                    <div className="w-8 h-8 rounded-lg bg-destructive/10 text-destructive flex items-center justify-center mb-4">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <AnimateIn key={i} delay={i * 110}>
+                    <div className="bg-surface border border-border rounded-xl p-6 h-full nesti-card-hover">
+                      <div className="w-8 h-8 rounded-lg bg-destructive/10 text-destructive flex items-center justify-center mb-4">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                      </div>
+                      <h3 className="text-h3 font-semibold text-text mb-2">{ef(pain.headline, v => updatePainPoint(i, 'headline', v))}</h3>
+                      <p className="text-body text-gray-60">{ef(pain.description, v => updatePainPoint(i, 'description', v))}</p>
                     </div>
-                    <h3 className="text-h3 font-semibold text-text mb-2">{ef(pain.headline, v => updatePainPoint(i, 'headline', v))}</h3>
-                    <p className="text-body text-gray-60">{ef(pain.description, v => updatePainPoint(i, 'description', v))}</p>
-                  </div>
+                  </AnimateIn>
                 ))}
               </div>
             </div>
@@ -555,15 +608,24 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
                 <h2 className="text-h1 font-semibold text-text">How Nesti AI works</h2>
                 <p className="text-body text-gray-60 mt-3 max-w-xl mx-auto">Up and running in days, not months. No complicated setup, no IT headaches.</p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_32px_1fr_32px_1fr] gap-4 md:gap-0 md:items-start">
                 {editedData.howItWorks.map((step, i) => (
-                  <div key={i} className="flex flex-col items-center text-center">
-                    <div className="w-16 h-16 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center mb-5">
-                      <span className="text-h3 font-bold text-primary">{step.step}</span>
-                    </div>
-                    <h3 className="text-h3 font-semibold text-text mb-2">{ef(step.title, v => updateHowItWorks(i, 'title', v))}</h3>
-                    <p className="text-body text-gray-60">{ef(step.description, v => updateHowItWorks(i, 'description', v))}</p>
-                  </div>
+                  <React.Fragment key={i}>
+                    <AnimateIn delay={i * 150} className="flex flex-col items-center text-center px-2">
+                      <div className="w-16 h-16 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center mb-5 nesti-glow relative">
+                        <span className="text-h3 font-bold text-primary">{step.step}</span>
+                      </div>
+                      <h3 className="text-h3 font-semibold text-text mb-2">{ef(step.title, v => updateHowItWorks(i, 'title', v))}</h3>
+                      <p className="text-body text-gray-60">{ef(step.description, v => updateHowItWorks(i, 'description', v))}</p>
+                    </AnimateIn>
+                    {i < editedData.howItWorks.length - 1 && (
+                      <div className="hidden md:flex items-center justify-center pt-7">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="text-primary/30 flex-shrink-0">
+                          <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                    )}
+                  </React.Fragment>
                 ))}
               </div>
             </div>
@@ -580,13 +642,15 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {editedData.features.map((feature, i) => (
-                  <div key={i} className="bg-surface border border-border rounded-xl p-6 shadow-soft hover:shadow-elevated hover:-translate-y-0.5 transition-all duration-200 group">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-white transition-colors duration-200">
-                      <Icon name={feature.icon} />
+                  <AnimateIn key={i} delay={i * 80}>
+                    <div className="bg-surface border border-border rounded-xl p-6 h-full nesti-card-hover group" style={{ borderTop: '2px solid transparent', backgroundImage: 'linear-gradient(white, white), linear-gradient(135deg, rgba(39,100,235,0.25), transparent)', backgroundOrigin: 'border-box', backgroundClip: 'padding-box, border-box' }}>
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-white transition-colors duration-200 nesti-glow">
+                        <Icon name={feature.icon} />
+                      </div>
+                      <h3 className="text-h3 font-semibold text-text mb-2">{ef(feature.title, v => updateFeature(i, 'title', v))}</h3>
+                      <p className="text-body text-gray-60">{ef(feature.description, v => updateFeature(i, 'description', v))}</p>
                     </div>
-                    <h3 className="text-h3 font-semibold text-text mb-2">{ef(feature.title, v => updateFeature(i, 'title', v))}</h3>
-                    <p className="text-body text-gray-60">{ef(feature.description, v => updateFeature(i, 'description', v))}</p>
-                  </div>
+                  </AnimateIn>
                 ))}
               </div>
             </div>
@@ -608,19 +672,27 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
 
       case 'stats':
         return (
-          <section className="py-12 sm:py-20 px-4 sm:px-6 bg-surface border-b border-border">
-            <div className="max-w-6xl mx-auto">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+          <section className="py-12 sm:py-20 px-4 sm:px-6 border-b border-border relative overflow-hidden"
+            style={{ background: 'linear-gradient(135deg, #f0f5ff 0%, #fafbff 50%, #f5f8ff 100%)' }}>
+            {/* Subtle grid decoration */}
+            <div aria-hidden className="absolute inset-0 pointer-events-none opacity-40"
+              style={{ backgroundImage: 'linear-gradient(rgba(39,100,235,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(39,100,235,0.06) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+            <div className="max-w-6xl mx-auto relative">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 text-center">
                 {[
                   { stat: '50+', label: 'Estate agency clients' },
                   { stat: '100%', label: 'Of calls answered, every time' },
-                  { stat: '24/7', label: 'Always-on call handling' },
-                  { stat: '< 5 days', label: 'Average time to go live' },
+                  { stat: '24/7', label: 'Always-on AI availability' },
+                  { stat: '5', label: 'Days average to go live', prefix: '< ' },
                 ].map(item => (
-                  <div key={item.stat} className="flex flex-col items-center">
-                    <span className="text-h1 sm:text-display font-bold text-primary leading-none mb-2">{item.stat}</span>
-                    <span className="text-small text-gray-60">{item.label}</span>
-                  </div>
+                  <AnimateIn key={item.stat}>
+                    <div className="flex flex-col items-center p-6 rounded-2xl bg-white/70 backdrop-blur-sm border border-primary/10 shadow-soft">
+                      <span className="text-h1 sm:text-display font-bold leading-none mb-2 nesti-stat-gradient">
+                        <AnimatedNumber display={item.stat} />
+                      </span>
+                      <span className="text-small text-gray-60 leading-snug">{item.label}</span>
+                    </div>
+                  </AnimateIn>
                 ))}
               </div>
             </div>
@@ -637,6 +709,13 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
                 <p className="text-caption font-medium text-primary uppercase tracking-wider mb-2">Hear it in action</p>
                 <h2 className="text-h1 font-semibold text-text">Hear Nesti AI handle real calls</h2>
                 <p className="text-body text-gray-60 mt-3 max-w-xl mx-auto">Listen to how Nesti AI handles real inbound enquiries — exactly like a senior negotiator, available 24/7.</p>
+                {/* Animated waveform */}
+                <div className="flex items-end justify-center gap-[3px] h-9 mt-6">
+                  {[0.35, 0.6, 0.85, 0.55, 1, 0.7, 0.45, 0.9, 0.6, 0.4, 0.75, 0.5, 0.85, 0.65, 0.35].map((h, i) => (
+                    <span key={i} className="nesti-wave-bar rounded-full bg-primary/60 w-[3px]"
+                      style={{ height: `${h * 100}%`, animationDelay: `${i * 0.08}s` }} />
+                  ))}
+                </div>
               </div>
               <div className="max-w-3xl mx-auto">
                 <DriveEmbed label="Example call" urlValue={voiceUrl1} onSave={url => { setVoiceUrl1(url); persist({ voiceUrl1: url }) }} isEditor={isEditor} />
@@ -692,6 +771,22 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
 
   return (
     <div className="min-h-screen bg-background font-sans">
+      <style>{`
+        @keyframes nesti-float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }
+        @keyframes nesti-wave { 0%,100% { transform: scaleY(0.25); opacity: 0.5 } 50% { transform: scaleY(1); opacity: 1 } }
+        @keyframes nesti-glow { 0%,100% { box-shadow: 0 0 0 0 rgba(39,100,235,0.18) } 50% { box-shadow: 0 0 0 10px rgba(39,100,235,0) } }
+        @keyframes nesti-shimmer { 0% { background-position: -200% center } 100% { background-position: 200% center } }
+        .nesti-float { animation: nesti-float 3.5s ease-in-out infinite; }
+        .nesti-glow { animation: nesti-glow 2.5s ease-in-out infinite; }
+        .nesti-wave-bar { animation: nesti-wave 1.2s ease-in-out infinite; transform-origin: bottom; display: inline-block; }
+        .nesti-stat-gradient {
+          background: linear-gradient(135deg, #2764EB 0%, #6B9FFF 100%);
+          -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .nesti-card-hover { transition: all 0.2s ease; }
+        .nesti-card-hover:hover { transform: translateY(-3px); box-shadow: 0 12px 32px -8px rgba(39,100,235,0.15), 0 4px 12px -4px rgba(0,0,0,0.08); }
+        .nesti-step-connector { background: linear-gradient(to right, rgba(39,100,235,0.15), rgba(39,100,235,0.35), rgba(39,100,235,0.15)); }
+      `}</style>
 
       {/* ─── NAVBAR ─── */}
       <nav className="border-b border-border bg-surface/95 backdrop-blur-sm sticky top-0 z-20">
@@ -823,13 +918,19 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
       </div>}
 
       {/* ─── HERO ─── */}
-      <section className="bg-surface border-b border-border">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-20 text-center">
+      <section className="bg-surface border-b border-border overflow-hidden relative">
+        {/* PropTech dot grid background */}
+        <div aria-hidden className="absolute inset-0 pointer-events-none select-none"
+          style={{ backgroundImage: 'radial-gradient(circle, rgba(39,100,235,0.07) 1.5px, transparent 1.5px)', backgroundSize: '28px 28px' }} />
+        {/* Radial gradient fade at edges */}
+        <div aria-hidden className="absolute inset-0 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 50%, transparent 40%, #FFFFFF 100%)' }} />
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-20 text-center relative">
           <div className="flex items-center justify-center gap-4 mb-8">
             <AgencyLogo logoUrl={data.agencyLogoUrl} agencyName={editedData.agencyName} className="h-10 w-auto max-w-[120px]" />
             <span className="text-gray-40 text-h2 font-light">×</span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={NESTI_MARK_URL} alt="Nesti" className="h-10 w-auto" />
+            <img src={NESTI_MARK_URL} alt="Nesti AI" className="h-10 w-auto nesti-float" />
           </div>
           <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full mb-6">
             <span className="w-1.5 h-1.5 rounded-full bg-primary" />
@@ -894,17 +995,69 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
       )}
 
       {/* ─── FOOTER ─── */}
-      <footer className="bg-surface border-t border-border py-8 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={NESTI_LOGO_URL} alt="Nesti" className="h-6 w-auto" />
-            {data.agencyLogoUrl && (<><span className="text-gray-40">×</span><AgencyLogo logoUrl={data.agencyLogoUrl} agencyName={editedData.agencyName} className="h-6 w-auto max-w-[80px]" /></>)}
+      <footer style={{ background: '#0E121B' }} className="border-t border-white/10 pt-12 pb-8 px-6">
+        <div className="max-w-6xl mx-auto">
+          {/* Top row */}
+          <div className="flex flex-col md:flex-row items-start justify-between gap-10 mb-10">
+            {/* Brand */}
+            <div className="flex flex-col gap-4 max-w-xs">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={NESTI_LOGO_URL} alt="Nesti AI" className="h-7 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
+              <p className="text-body text-white/40">AI-enabled call handling built for UK estate and letting agents. Never miss an enquiry.</p>
+              <a href={ctaUrl} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-small font-semibold rounded-lg hover:bg-primary-hover transition-colors w-fit">
+                Book a Demo <Icon name="arrow-right" />
+              </a>
+            </div>
+            {/* Links */}
+            <div className="flex gap-12 sm:gap-20">
+              <div>
+                <p className="text-caption font-semibold uppercase tracking-widest mb-4 text-white/30">Product</p>
+                <div className="flex flex-col gap-3">
+                  {[
+                    { label: 'How it works', href: 'https://www.nesti.io' },
+                    { label: 'CRM integrations', href: 'https://www.nesti.io' },
+                    { label: 'Pricing', href: 'https://www.nesti.io' },
+                    { label: 'Book a demo', href: ctaUrl },
+                  ].map(l => (
+                    <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer"
+                      className="text-small text-white/50 hover:text-white transition-colors">
+                      {l.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-caption font-semibold uppercase tracking-widest mb-4 text-white/30">Company</p>
+                <div className="flex flex-col gap-3">
+                  {[
+                    { label: 'About Nesti AI', href: 'https://www.nesti.io' },
+                    { label: 'Contact us', href: 'https://www.nesti.io' },
+                    { label: 'Privacy policy', href: 'https://www.nesti.io' },
+                  ].map(l => (
+                    <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer"
+                      className="text-small text-white/50 hover:text-white transition-colors">
+                      {l.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-4 text-caption text-gray-50">
-            <a href={ctaUrl} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">www.nesti.io</a>
-            <span>·</span>
-            <span>Generated {generatedDate} for {editedData.contactFirstName ? `${editedData.contactFirstName} at ` : ''}{editedData.agencyName}</span>
+          {/* Bottom bar */}
+          <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2 text-caption text-white/30">
+              {data.agencyLogoUrl && (
+                <span>Generated for <span className="text-white/50 font-medium">{editedData.agencyName}</span> ·</span>
+              )}
+              <span>{generatedDate}</span>
+            </div>
+            <p className="text-caption text-white/30">
+              © {new Date().getFullYear()} Nesti AI ·{' '}
+              <a href="https://www.nesti.io" target="_blank" rel="noopener noreferrer" className="text-white/50 hover:text-white transition-colors">
+                www.nesti.io
+              </a>
+            </p>
           </div>
         </div>
       </footer>
