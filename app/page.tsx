@@ -105,7 +105,7 @@ export default function HomePage() {
       const updated = [newRecent, ...recents.filter(r => r.sourceUrl !== parsedUrl)].slice(0, 8)
       setRecents(updated)
       localStorage.setItem('nesti-recents', JSON.stringify(updated))
-      router.push(`/preview/${data.id}`)
+      router.push(`/preview/${data.id}?edit`)
     } catch {
       setError('Network error. Please check your connection and try again.')
     } finally {
@@ -310,7 +310,7 @@ export default function HomePage() {
                   <p className="text-caption font-medium text-gray-60 uppercase tracking-wider mb-3">Recent pages</p>
                   <div className="flex flex-col gap-2">
                     {recents.map(recent => (
-                      <a key={recent.id} href={`/preview/${recent.id}`}
+                      <a key={recent.id} href={`/preview/${recent.id}?edit`}
                         className="flex items-center justify-between p-3 bg-surface border border-border rounded-xl hover:border-gray-40 hover:shadow-soft transition-all duration-150 group">
                         <div>
                           <p className="text-small font-medium text-text group-hover:text-primary transition-colors">{recent.agencyName}</p>
@@ -478,7 +478,7 @@ export default function HomePage() {
                               className="p-1.5 text-gray-40 hover:text-primary border border-transparent hover:border-border rounded-lg transition-all">
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
                             </button>
-                            <a href={`/preview/${result.id}`} target="_blank" rel="noopener noreferrer" title="Open page"
+                            <a href={`/preview/${result.id}?edit`} target="_blank" rel="noopener noreferrer" title="Open page"
                               className="p-1.5 text-gray-40 hover:text-primary border border-transparent hover:border-border rounded-lg transition-all">
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                             </a>

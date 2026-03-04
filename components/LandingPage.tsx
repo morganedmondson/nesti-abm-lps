@@ -80,8 +80,8 @@ const SECTION_LABELS: Record<SectionId, string> = {
 
 // ─── Brand assets ─────────────────────────────────────────────────────────────
 
-const NESTI_LOGO_URL = '/NESTI-LOGO-BLACK.png'
-const NESTI_MARK_URL = '/NESTI-LOGO-BLACK.png'
+const NESTI_LOGO_URL = 'https://framerusercontent.com/images/JzFfiaQX72q1RYQhXynCAACR8cY.png'
+const NESTI_MARK_URL = 'https://framerusercontent.com/images/ionFD7qGUhxkIz0wKQgEItnCSU.png'
 
 // ─── Client logos ─────────────────────────────────────────────────────────────
 
@@ -89,9 +89,7 @@ const CLIENT_LOGOS: { name: string; logoUrl: string }[] = [
   { name: 'Fine & Country', logoUrl: 'https://devvlsnxxkrq9.cloudfront.net/prod/assets/logos/fc-logo.png' },
   { name: 'Persimmon Homes', logoUrl: 'https://www.persimmonhomes.com/media/os0ly03c/persimmon-logo-2022.png' },
   { name: 'Richard James', logoUrl: 'https://richardjames.uk/wp-content/uploads/2020/10/RJ-Logo-Blue.png' },
-  { name: 'Smart Property Group', logoUrl: 'https://www.smartestateagent.co.uk/images/SmartPropertyGroup_Mono_White.png.pagespeed.ce.3DFH2vtCH9.png' },
   { name: 'The Letting Station', logoUrl: 'https://thelettingstation.co.uk/assets/uploads/1622788844_Letting-Station-Logo.png' },
-  { name: 'Stephen Tew', logoUrl: 'https://stephentew.estate-track.co.uk/wp-content/uploads/2023/09/233875-logolight.png' },
 ]
 
 function ClientLogo({ name, logoUrl }: { name: string; logoUrl: string }) {
@@ -358,13 +356,25 @@ function DriveEmbed({ label, urlValue, onSave }: { label: string; urlValue: stri
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const CRM_LOGOS = ['Reapit', 'Alto', 'Street.co.uk', 'Rex', 'Apex27', 'SME Professional']
+const CRM_LOGOS: { name: string; logoUrl: string }[] = [
+  { name: 'Reapit', logoUrl: 'https://cdn.prod.website-files.com/65cc1dfdc4913d1034befe43/65cd4892e588ed11b16e33d7_Reapit%20logo(1).svg' },
+  { name: 'Alto', logoUrl: 'https://alto.co.uk/wp-content/uploads/2020/07/Alto-Logo_transparent-black.png' },
+  { name: 'Street.co.uk', logoUrl: 'https://cdn.prod.website-files.com/626a7c1738d51884ec5ac9d7/67336c2f745666127d1710be_Street-Logo-Vector.svg' },
+  { name: 'Rex', logoUrl: 'https://cdn.prod.website-files.com/692cf39461ea1001ff1f070f/694758e9bcfc762a504d4d91_logo-rex%20logo%20form%20top.svg' },
+  { name: 'Apex27', logoUrl: 'https://apex27.co.uk/img/logo_navy.png' },
+  { name: 'SME Professional', logoUrl: '' },
+]
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function LandingPage({ data, pageId }: { data: LandingPageData; pageId: string }) {
-  const [sections, setSections] = useState<SectionId[]>(DEFAULT_ORDER)
-  const [hiddenSections, setHiddenSections] = useState<Set<SectionId>>(new Set())
+  const [isEditor, setIsEditor] = useState(false)
+  const [sections, setSections] = useState<SectionId[]>(
+    DEFAULT_ORDER.filter(id => id !== 'stats' && id !== 'testimonial')
+  )
+  const [hiddenSections, setHiddenSections] = useState<Set<SectionId>>(
+    new Set<SectionId>(['stats', 'testimonial'] as SectionId[])
+  )
   const [slidesUrl, setSlidesUrl] = useState('')
   const [calendlyUrl, setCalendlyUrl] = useState('')
   const [voiceUrl1, setVoiceUrl1] = useState('')
@@ -398,6 +408,10 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
       }
     } catch { /* ignore */ }
   }, [storageKey])
+
+  useEffect(() => {
+    setIsEditor(new URLSearchParams(window.location.search).has('edit'))
+  }, [])
 
   const persist = useCallback((updates: Partial<{
     sections: SectionId[]; hiddenSections: SectionId[]
@@ -578,10 +592,10 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
           <section className="py-16 px-6 bg-gray-10 border-y border-border">
             <div className="max-w-6xl mx-auto text-center">
               <p className="text-caption font-medium text-gray-50 uppercase tracking-wider mb-6">Seamless CRM integrations</p>
-              <div className="flex flex-wrap items-center justify-center gap-4">
-                {CRM_LOGOS.map(crm => <div key={crm} className="px-4 py-2 bg-surface border border-border rounded-lg text-small font-medium text-gray-60 shadow-sm">{crm}</div>)}
+              <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
+                {CRM_LOGOS.map(c => <ClientLogo key={c.name} name={c.name} logoUrl={c.logoUrl} />)}
               </div>
-              <p className="text-body text-gray-50 mt-6">Nesti pushes call data, notes, and applicant scores directly into your existing CRM — no double data entry.</p>
+              <p className="text-body text-gray-50 mt-6">Nesti pushes call data, notes, and applicant scores directly into your existing CRM. No double data entry.</p>
             </div>
           </section>
         )
@@ -608,6 +622,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
         )
 
       case 'voices':
+        if (!voiceUrl1 && !isEditor) return null
         return (
           <section className="py-20 px-6 bg-surface border-y border-border">
             <div className="max-w-6xl mx-auto">
@@ -644,6 +659,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
         )
 
       case 'slides':
+        if (!slidesUrl && !isEditor) return null
         return (
           <IframeSection id="slides" icon="slides" title="Watch Our Presentation"
             description={`See exactly how Nesti transforms call handling for agencies like ${editedData.agencyName}.`}
@@ -653,9 +669,10 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
         )
 
       case 'calendly':
+        if (!calendlyUrl && !isEditor) return null
         return (
           <IframeSection id="calendly" icon="calendar" title="Book a Demo"
-            description={`Schedule a personalised demo for ${editedData.agencyName} — takes just 20 minutes.`}
+            description={`Schedule a personalised demo for ${editedData.agencyName}. Takes just 20 minutes.`}
             placeholder="Paste your Calendly URL here (e.g. https://calendly.com/your-name/nesti-demo)"
             urlValue={calendlyUrl} onSave={url => { setCalendlyUrl(url); persist({ calendlyUrl: url }) }}
             toEmbedUrl={toCalendlyEmbedUrl} aspectRatio="100%" />
@@ -689,8 +706,8 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
         </div>
       </nav>
 
-      {/* ─── EDIT TOOLBAR ─── */}
-      <div className="sticky top-14 z-10 bg-surface/95 backdrop-blur-sm border-b border-border px-4 py-2">
+      {/* ─── EDIT TOOLBAR (editor only) ─── */}
+      {isEditor && <div className="sticky top-14 z-10 bg-surface/95 backdrop-blur-sm border-b border-border px-4 py-2">
         <div className="max-w-6xl mx-auto flex flex-col gap-2">
           {/* Top row: edit controls + publish */}
           <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -780,7 +797,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
             <div className="flex items-center gap-3 px-3 py-2.5 bg-green-50 border border-green-200 rounded-xl">
               <Icon name="check" />
               <span className="text-caption font-medium text-green-800 flex-1 truncate">
-                Page published — share this link with your lead:
+                Page published. Share this link with your contact:
                 <span className="ml-2 font-mono text-green-700">{typeof window !== 'undefined' ? `${window.location.origin}/preview/${pageId}` : ''}</span>
               </span>
               <button onClick={handleCopyLink}
@@ -797,7 +814,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
             </div>
           )}
         </div>
-      </div>
+      </div>}
 
       {/* ─── HERO ─── */}
       <section className="bg-surface border-b border-border">
@@ -840,67 +857,35 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
         </div>
       </section>
 
-      {/* ─── Drag hint ─── */}
-      <div className="flex items-center justify-center gap-2 py-2 bg-gray-10 border-b border-border">
-        <Icon name="grip" />
-        <span className="text-caption text-gray-50">Hover over any section to drag, edit, or remove it</span>
-      </div>
-
-      {/* ─── DRAGGABLE SECTIONS ─── */}
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        <SortableContext items={sections} strategy={verticalListSortingStrategy}>
-          {sections.map(id => (
-            <SortableSection key={id} id={id} label={SECTION_LABELS[id]} editMode={editMode} onDelete={handleDeleteSection}>
-              {renderSection(id)}
-            </SortableSection>
-          ))}
-        </SortableContext>
-        <DragOverlay>
-          {activeId ? (
-            <div className="bg-surface border-2 border-primary rounded-xl shadow-xl px-6 py-4 flex items-center gap-3 opacity-90">
-              <Icon name="grip" /><span className="text-small font-semibold text-text">{SECTION_LABELS[activeId as SectionId]}</span>
-            </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
-
-      {/* ─── CTA ─── */}
-      <section className="py-20 px-6 bg-primary">
-        <div className="max-w-3xl mx-auto text-center">
-          {data.agencyLogoUrl && (
-            <div className="flex items-center justify-center gap-3 mb-8">
-              <AgencyLogo logoUrl={data.agencyLogoUrl} agencyName={editedData.agencyName} className="h-8 w-auto max-w-[100px] brightness-0 invert opacity-70" />
-              <span className="text-primary-contrast/50 text-h3 font-light">×</span>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={NESTI_MARK_URL} alt="Nesti" className="h-8 w-auto brightness-0 invert opacity-70" />
-            </div>
-          )}
-          <h2 className="text-h1 font-semibold text-primary-contrast mb-4">
-            {ef(editedData.ctaHeadline, v => updateData('ctaHeadline', v))}
-          </h2>
-          <p className="text-body text-primary-contrast/80 mb-10 max-w-xl mx-auto">
-            {ef(editedData.ctaDescription, v => updateData('ctaDescription', v))}
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <a href={ctaUrl} target="_blank" rel="noopener noreferrer"
-              className="px-8 py-3.5 bg-primary-contrast text-primary text-body font-semibold rounded-lg shadow-md hover:shadow-lg hover:-translate-y-px active:translate-y-0 transition-all duration-150 flex items-center gap-2 w-full sm:w-auto justify-center">
-              Book a Free Demo <Icon name="arrow-right" />
-            </a>
-            <a href={ctaUrl} target="_blank" rel="noopener noreferrer"
-              className="px-8 py-3.5 text-body font-medium text-primary-contrast border border-primary-contrast/30 rounded-lg hover:bg-primary-contrast/10 transition-colors duration-150 w-full sm:w-auto text-center">
-              Learn More
-            </a>
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-6 mt-8">
-            {['No long-term contracts', 'Free setup support', 'Live in under a week'].map(item => (
-              <div key={item} className="flex items-center gap-1.5">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-primary-contrast/70"><polyline points="20 6 9 17 4 12"/></svg>
-                <span className="text-caption text-primary-contrast/70">{item}</span>
-              </div>
-            ))}
-          </div>
+      {/* ─── Drag hint (editor only) ─── */}
+      {isEditor && (
+        <div className="flex items-center justify-center gap-2 py-2 bg-gray-10 border-b border-border">
+          <Icon name="grip" />
+          <span className="text-caption text-gray-50">Hover over any section to drag, edit, or remove it</span>
         </div>
-      </section>
+      )}
+
+      {/* ─── SECTIONS ─── */}
+      {isEditor ? (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+          <SortableContext items={sections} strategy={verticalListSortingStrategy}>
+            {sections.map(id => (
+              <SortableSection key={id} id={id} label={SECTION_LABELS[id]} editMode={editMode} onDelete={handleDeleteSection}>
+                {renderSection(id)}
+              </SortableSection>
+            ))}
+          </SortableContext>
+          <DragOverlay>
+            {activeId ? (
+              <div className="bg-surface border-2 border-primary rounded-xl shadow-xl px-6 py-4 flex items-center gap-3 opacity-90">
+                <Icon name="grip" /><span className="text-small font-semibold text-text">{SECTION_LABELS[activeId as SectionId]}</span>
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      ) : (
+        <>{sections.map(id => renderSection(id))}</>
+      )}
 
       {/* ─── FOOTER ─── */}
       <footer className="bg-surface border-t border-border py-8 px-6">
