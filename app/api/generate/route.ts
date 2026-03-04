@@ -96,66 +96,6 @@ function extractLogoUrl(base: URL, $: ReturnType<typeof cheerio.load>): string |
   return null
 }
 
-async function scrapeLinkedIn(url: string): Promise<{ name: string; firstName: string } | null> {
-  // Normalise URL — add https if missing
-  if (!url.startsWith('http')) url = 'https://' + url
-
-  // Try to extract name from the URL slug as a reliable fallback
-  // e.g. linkedin.com/in/james-smith-abc123 → "James Smith"
-  function nameFromSlug(rawUrl: string): { name: string; firstName: string } | null {
-    const match = rawUrl.match(/linkedin\.com\/in\/([^/?#]+)/)
-    if (!match) return null
-    const slug = match[1]
-      .replace(/-\w{6,}$/, '') // strip trailing random ID like -2b4f9a
-      .replace(/-/g, ' ')
-      .replace(/\b\w/g, c => c.toUpperCase())
-      .trim()
-    if (!slug || slug.length < 2) return null
-    const firstName = slug.split(' ')[0]
-    return { name: slug, firstName }
-  }
-
-  try {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 8000)
-
-    let html = ''
-    try {
-      const res = await fetch(url, {
-        signal: controller.signal,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
-          'Accept': 'text/html',
-          'Accept-Language': 'en-GB,en;q=0.9',
-        },
-      })
-      if (res.ok) html = await res.text()
-    } finally {
-      clearTimeout(timeout)
-    }
-
-    if (html) {
-      const $ = cheerio.load(html)
-
-      // LinkedIn public profiles: og:title = "Name - Job Title | LinkedIn"
-      const ogTitle = $('meta[property="og:title"]').attr('content') || ''
-      const pageTitle = $('title').text() || ''
-
-      for (const raw of [ogTitle, pageTitle]) {
-        // Strip " | LinkedIn" suffix and everything after the first " - "
-        const cleaned = raw.replace(/\s*\|\s*LinkedIn\s*$/i, '').split(' - ')[0].trim()
-        if (cleaned && cleaned.length > 1 && cleaned.length < 60 && !cleaned.toLowerCase().includes('linkedin')) {
-          const firstName = cleaned.split(' ')[0]
-          return { name: cleaned, firstName }
-        }
-      }
-    }
-  } catch {
-    // fall through to slug-based extraction
-  }
-
-  return nameFromSlug(url)
-}
 
 async function scrapeWebsite(url: string): Promise<{ content: string; logoUrl: string | null }> {
   const controller = new AbortController()
@@ -268,7 +208,7 @@ RETURN: A single valid JSON object matching this exact schema — no markdown, n
 
 export async function POST(req: NextRequest) {
   try {
-    const { url, linkedInUrl } = await req.json()
+    const { url, contactFirstName } = await req.json()
 
     if (!url || typeof url !== 'string') {
       return NextResponse.json({ error: 'A URL is required.' }, { status: 400 })
@@ -285,7 +225,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Only HTTP and HTTPS URLs are supported.' }, { status: 400 })
     }
 
-    // Scrape website and LinkedIn in parallel
     let scraped: { content: string; logoUrl: string | null }
     try {
       scraped = await scrapeWebsite(url)
@@ -303,11 +242,12 @@ export async function POST(req: NextRequest) {
       }, { status: 400 })
     }
 
-    const contact = linkedInUrl ? await scrapeLinkedIn(linkedInUrl) : null
+    const firstName: string | null = (typeof contactFirstName === 'string' && contactFirstName.trim())
+      ? contactFirstName.trim()
+      : null
 
-    // Build user message — include contact name if available
-    const contactLine = contact
-      ? `\n\nCONTACT PERSON:\nFull name: ${contact.name}\nFirst name: ${contact.firstName}\nLinkedIn: ${linkedInUrl}\n\nPersonalise the copy directly to ${contact.firstName}. Address them by first name in the heroHeadline (e.g. "${contact.firstName}, here's how Nesti can transform [Agency Name]") and reference them by name in the ctaHeadline.`
+    const contactLine = firstName
+      ? `\n\nCONTACT PERSON:\nFirst name: ${firstName}\n\nPersonalise the copy directly to ${firstName}. Address them by first name in the heroHeadline (e.g. "${firstName}, here's how Nesti can transform [Agency Name]") and reference them by first name in the ctaHeadline.`
       : ''
 
     const message = await getAnthropicClient().messages.create({
@@ -340,8 +280,8 @@ export async function POST(req: NextRequest) {
     const fullData: LandingPageData = {
       ...pageData,
       agencyLogoUrl: scraped.logoUrl,
-      contactName: contact?.name ?? null,
-      contactFirstName: contact?.firstName ?? null,
+      contactName: firstName,
+      contactFirstName: firstName,
       sourceUrl: url,
       generatedAt: new Date().toISOString(),
     }
