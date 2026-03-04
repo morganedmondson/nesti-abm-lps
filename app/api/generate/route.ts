@@ -29,6 +29,7 @@ interface LandingPageData {
   testimonial: { quote: string; author: string; company: string }
   ctaHeadline: string
   ctaDescription: string
+  ctaUrl: string
   sourceUrl: string
   generatedAt: string
 }
@@ -282,6 +283,7 @@ export async function POST(req: NextRequest) {
       agencyLogoUrl: scraped.logoUrl,
       contactName: firstName,
       contactFirstName: firstName,
+      ctaUrl: 'https://www.nesti.io',
       sourceUrl: url,
       generatedAt: new Date().toISOString(),
     }
@@ -323,7 +325,7 @@ export async function PUT(req: NextRequest) {
     // Only allow updating editable content fields
     const allowed: (keyof LandingPageData)[] = [
       'heroHeadline', 'heroSubheadline', 'agencyName', 'agencyLocation', 'agencySpecialty',
-      'painPoints', 'howItWorks', 'features', 'testimonial', 'ctaHeadline', 'ctaDescription',
+      'painPoints', 'howItWorks', 'features', 'testimonial', 'ctaHeadline', 'ctaDescription', 'ctaUrl',
     ]
     const filtered: Partial<LandingPageData> = {}
     for (const key of allowed) {

@@ -32,6 +32,7 @@ interface LandingPageData {
   testimonial: { quote: string; author: string; company: string }
   ctaHeadline: string
   ctaDescription: string
+  ctaUrl: string
   sourceUrl: string
   generatedAt: string
 }
