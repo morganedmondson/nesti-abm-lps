@@ -693,9 +693,9 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
 
       {/* ─── NAVBAR ─── */}
       <nav className="border-b border-border bg-surface/95 backdrop-blur-sm sticky top-0 z-20">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={NESTI_LOGO_URL} alt="Nesti" className="h-9 w-auto" />
+          <img src={NESTI_LOGO_URL} alt="Nesti" className="h-12 w-auto" />
           <div className="flex items-center gap-3">
             {data.agencyLogoUrl && (
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gray-10 border border-border rounded-full">
@@ -711,7 +711,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
       </nav>
 
       {/* ─── EDIT TOOLBAR (editor only) ─── */}
-      {isEditor && <div className="sticky top-14 z-10 bg-surface/95 backdrop-blur-sm border-b border-border px-4 py-2">
+      {isEditor && <div className="sticky top-16 z-10 bg-surface/95 backdrop-blur-sm border-b border-border px-4 py-2">
         <div className="max-w-6xl mx-auto flex flex-col gap-2">
           {/* Top row: edit controls + publish */}
           <div className="flex items-center justify-between gap-4 flex-wrap">
