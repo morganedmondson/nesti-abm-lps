@@ -237,9 +237,9 @@ function SortableSection({ id, label, children, editMode, onDelete }: {
 
 // ─── Iframe URL editor ────────────────────────────────────────────────────────
 
-function IframeSection({ id, icon, title, description, placeholder, urlValue, onSave, toEmbedUrl, aspectRatio = '56.25%' }: {
+function IframeSection({ id, icon, title, description, placeholder, urlValue, onSave, toEmbedUrl, aspectRatio = '56.25%', isEditor = false }: {
   id: string; icon: string; title: string; description: string; placeholder: string
-  urlValue: string; onSave: (url: string) => void; toEmbedUrl: (url: string) => string; aspectRatio?: string
+  urlValue: string; onSave: (url: string) => void; toEmbedUrl: (url: string) => string; aspectRatio?: string; isEditor?: boolean
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(urlValue)
@@ -264,12 +264,14 @@ function IframeSection({ id, icon, title, description, placeholder, urlValue, on
             <div style={{ paddingBottom: aspectRatio, position: 'relative', height: 0 }}>
               <iframe src={embedUrl} className="absolute inset-0 w-full h-full" frameBorder="0" allowFullScreen allow="autoplay" loading="lazy" />
             </div>
-            <button onClick={() => { setDraft(urlValue); setEditing(true) }}
-              className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5
-                bg-surface/90 backdrop-blur-sm border border-border rounded-lg
-                text-caption font-medium text-gray-60 hover:text-text hover:border-gray-40 shadow-sm transition-all duration-150">
-              <Icon name="pencil" />Edit URL
-            </button>
+            {isEditor && (
+              <button onClick={() => { setDraft(urlValue); setEditing(true) }}
+                className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5
+                  bg-surface/90 backdrop-blur-sm border border-border rounded-lg
+                  text-caption font-medium text-gray-60 hover:text-text hover:border-gray-40 shadow-sm transition-all duration-150">
+                <Icon name="pencil" />Edit URL
+              </button>
+            )}
           </div>
         ) : (
           <div className="border-2 border-dashed border-border rounded-xl p-12 text-center bg-gray-10">
@@ -305,7 +307,7 @@ function IframeSection({ id, icon, title, description, placeholder, urlValue, on
 
 // ─── Single Drive embed (used in Voices section) ──────────────────────────────
 
-function DriveEmbed({ label, urlValue, onSave }: { label: string; urlValue: string; onSave: (u: string) => void }) {
+function DriveEmbed({ label, urlValue, onSave, isEditor = false }: { label: string; urlValue: string; onSave: (u: string) => void; isEditor?: boolean }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(urlValue)
   const embedUrl = urlValue ? toDriveEmbedUrl(urlValue) : ''
@@ -320,12 +322,14 @@ function DriveEmbed({ label, urlValue, onSave }: { label: string; urlValue: stri
           <div style={{ paddingBottom: '56.25%', position: 'relative', height: 0 }}>
             <iframe src={embedUrl} className="absolute inset-0 w-full h-full" frameBorder="0" allowFullScreen loading="lazy" />
           </div>
-          <button onClick={() => { setDraft(urlValue); setEditing(true) }}
-            className="absolute top-2 right-2 flex items-center gap-1.5 px-2.5 py-1.5
-              bg-surface/90 backdrop-blur-sm border border-border rounded-lg
-              text-caption font-medium text-gray-60 hover:text-text hover:border-gray-40 shadow-sm transition-all duration-150">
-            <Icon name="pencil" />Edit
-          </button>
+          {isEditor && (
+            <button onClick={() => { setDraft(urlValue); setEditing(true) }}
+              className="absolute top-2 right-2 flex items-center gap-1.5 px-2.5 py-1.5
+                bg-surface/90 backdrop-blur-sm border border-border rounded-lg
+                text-caption font-medium text-gray-60 hover:text-text hover:border-gray-40 shadow-sm transition-all duration-150">
+              <Icon name="pencil" />Edit
+            </button>
+          )}
         </div>
       ) : editing ? (
         <div className="border border-border rounded-xl p-4 bg-gray-10">
@@ -633,7 +637,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
                 <p className="text-body text-gray-60 mt-3 max-w-xl mx-auto">Listen to how Nesti handles real inbound calls — just like a senior negotiator would.</p>
               </div>
               <div className="max-w-3xl mx-auto">
-                <DriveEmbed label="Example call" urlValue={voiceUrl1} onSave={url => { setVoiceUrl1(url); persist({ voiceUrl1: url }) }} />
+                <DriveEmbed label="Example call" urlValue={voiceUrl1} onSave={url => { setVoiceUrl1(url); persist({ voiceUrl1: url }) }} isEditor={isEditor} />
               </div>
             </div>
           </section>
@@ -665,7 +669,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
             description={`See exactly how Nesti transforms call handling for agencies like ${editedData.agencyName}.`}
             placeholder="Paste your Google Slides share URL here"
             urlValue={slidesUrl} onSave={url => { setSlidesUrl(url); persist({ slidesUrl: url }) }}
-            toEmbedUrl={toSlidesEmbedUrl} aspectRatio="56.25%" />
+            toEmbedUrl={toSlidesEmbedUrl} aspectRatio="56.25%" isEditor={isEditor} />
         )
 
       case 'calendly':
@@ -675,7 +679,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
             description={`Schedule a personalised demo for ${editedData.agencyName}. Takes just 20 minutes.`}
             placeholder="Paste your Calendly URL here (e.g. https://calendly.com/your-name/nesti-demo)"
             urlValue={calendlyUrl} onSave={url => { setCalendlyUrl(url); persist({ calendlyUrl: url }) }}
-            toEmbedUrl={toCalendlyEmbedUrl} aspectRatio="100%" />
+            toEmbedUrl={toCalendlyEmbedUrl} aspectRatio="100%" isEditor={isEditor} />
         )
     }
   }
