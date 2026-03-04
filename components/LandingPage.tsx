@@ -102,7 +102,7 @@ function ClientLogo({ name, logoUrl }: { name: string; logoUrl: string }) {
     <img
       src={logoUrl}
       alt={name}
-      className="h-7 max-w-[110px] object-contain opacity-50 grayscale"
+      className="h-7 max-w-[110px] object-contain grayscale opacity-70 mix-blend-multiply"
       onError={() => setFailed(true)}
     />
   )
