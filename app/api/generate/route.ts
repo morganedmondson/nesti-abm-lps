@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import * as cheerio from 'cheerio'
 import { v4 as uuidv4 } from 'uuid'
-import { Redis } from '@upstash/redis'
+import { createClient } from '@supabase/supabase-js'
 
 function getAnthropicClient() {
   const apiKey = process.env.ANTHROPIC_API_KEY
@@ -12,35 +12,51 @@ function getAnthropicClient() {
   return new Anthropic({ apiKey })
 }
 
-// ─── Persistent storage (Upstash Redis) with in-memory fallback for local dev ─
+// ─── Persistent storage (Supabase) with in-memory fallback for local dev ──────
 
-const redis = (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
-  ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
+const supabase = (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY)
+  ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
   : null
 
-const memStore = new Map<string, LandingPageData>()
-const memSlugs = new Map<string, string>()
+// Local dev fallback
+const memStore = new Map<string, { slug: string; data: LandingPageData }>()
 
-const pageKey = (id: string) => `nesti:page:${id}`
-const slugKey = (s: string) => `nesti:slug:${s}`
-
-async function savePage(id: string, data: LandingPageData): Promise<void> {
-  if (redis) { await redis.set(pageKey(id), data) } else { memStore.set(id, data) }
+async function storePage(id: string, slug: string, data: LandingPageData): Promise<void> {
+  if (supabase) {
+    await supabase.from('nesti_pages').insert({ id, slug, data })
+  } else {
+    memStore.set(id, { slug, data })
+  }
 }
 async function getPage(id: string): Promise<LandingPageData | null> {
-  if (redis) return redis.get<LandingPageData>(pageKey(id))
-  return memStore.get(id) ?? null
+  if (supabase) {
+    const { data: row } = await supabase.from('nesti_pages').select('data').eq('id', id).single()
+    return (row as { data: LandingPageData } | null)?.data ?? null
+  }
+  return memStore.get(id)?.data ?? null
 }
-async function saveSlug(slug: string, id: string): Promise<void> {
-  if (redis) { await redis.set(slugKey(slug), id) } else { memSlugs.set(slug, id) }
+async function updatePage(id: string, data: LandingPageData): Promise<void> {
+  if (supabase) {
+    await supabase.from('nesti_pages').update({ data }).eq('id', id)
+  } else {
+    const existing = memStore.get(id)
+    if (existing) memStore.set(id, { ...existing, data })
+  }
 }
 async function getSlugId(slug: string): Promise<string | null> {
-  if (redis) return redis.get<string>(slugKey(slug))
-  return memSlugs.get(slug) ?? null
+  if (supabase) {
+    const { data: row } = await supabase.from('nesti_pages').select('id').eq('slug', slug).single()
+    return (row as { id: string } | null)?.id ?? null
+  }
+  const entry = Array.from(memStore.entries()).find(([, v]) => v.slug === slug)
+  return entry ? entry[0] : null
 }
 async function slugTaken(slug: string): Promise<boolean> {
-  if (redis) return (await redis.exists(slugKey(slug))) > 0
-  return memSlugs.has(slug)
+  if (supabase) {
+    const { count } = await supabase.from('nesti_pages').select('id', { count: 'exact', head: true }).eq('slug', slug)
+    return (count ?? 0) > 0
+  }
+  return Array.from(memStore.values()).some(v => v.slug === slug)
 }
 
 const RESERVED_SLUGS = new Set(['api', 'preview', '_next', 'favicon.ico', 'robots.txt'])
@@ -344,8 +360,7 @@ export async function POST(req: NextRequest) {
 
     const id = uuidv4()
     const slug = await uniqueSlug(generateSlug(fullData.agencyName))
-    await savePage(id, fullData)
-    await saveSlug(slug, id)
+    await storePage(id, slug, fullData)
 
     return NextResponse.json({ id, slug, agencyName: fullData.agencyName })
   } catch (err) {
@@ -394,7 +409,7 @@ export async function PUT(req: NextRequest) {
     for (const key of allowed) {
       if (key in updates) (filtered as Record<string, unknown>)[key] = updates[key]
     }
-    await savePage(id, { ...existing, ...filtered })
+    await updatePage(id, { ...existing, ...filtered } as LandingPageData)
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 })
