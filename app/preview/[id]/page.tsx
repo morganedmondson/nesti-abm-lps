@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
   const data = await getPageData(params.id)
   if (!data) return { title: 'Not Found' }
   return {
-    title: `Nesti × ${data.agencyName} — Personalised Pitch`,
+    title: `Nesti AI × ${data.agencyName}`,
     description: data.heroSubheadline,
   }
 }

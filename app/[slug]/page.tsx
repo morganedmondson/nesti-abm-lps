@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const result = await getPageDataBySlug(params.slug)
   if (!result) return { title: 'Not Found' }
   return {
-    title: `Nesti × ${result.data.agencyName} — Personalised Pitch`,
+    title: `Nesti AI × ${result.data.agencyName}`,
     description: result.data.heroSubheadline,
   }
 }

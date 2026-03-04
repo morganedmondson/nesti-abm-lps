@@ -263,11 +263,8 @@ export default function HomePage() {
       {/* Navbar */}
       <nav className="border-b border-border bg-surface/95 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <span className="text-h3 font-bold text-text tracking-tight">nesti<span className="text-primary">.</span></span>
-          <a href="https://www.nesti.io" target="_blank" rel="noopener noreferrer"
-            className="px-4 py-2 text-small font-medium text-primary border border-primary/40 rounded-lg hover:bg-primary/5 transition-colors duration-150">
-            Visit nesti.io
-          </a>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="https://framerusercontent.com/images/JzFfiaQX72q1RYQhXynCAACR8cY.png" alt="Nesti" className="h-9 w-auto" />
         </div>
       </nav>
 

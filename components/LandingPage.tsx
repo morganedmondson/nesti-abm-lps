@@ -90,6 +90,8 @@ const CLIENT_LOGOS: { name: string; logoUrl: string }[] = [
   { name: 'Persimmon Homes', logoUrl: 'https://www.persimmonhomes.com/media/os0ly03c/persimmon-logo-2022.png' },
   { name: 'Richard James', logoUrl: 'https://richardjames.uk/wp-content/uploads/2020/10/RJ-Logo-Blue.png' },
   { name: 'The Letting Station', logoUrl: 'https://thelettingstation.co.uk/assets/uploads/1622788844_Letting-Station-Logo.png' },
+  { name: 'Quealy & Co', logoUrl: 'https://www.quealy.co.uk/templates/stb/src/img/email/logo.png' },
+  { name: 'Hunters', logoUrl: 'https://www.hunters-group.co.uk/wp-content/themes/hunters/img/logo.svg' },
 ]
 
 function ClientLogo({ name, logoUrl }: { name: string; logoUrl: string }) {
@@ -550,7 +552,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
             <div className="max-w-6xl mx-auto">
               <div className="text-center mb-12">
                 <p className="text-caption font-medium text-primary uppercase tracking-wider mb-2">Simple to get started</p>
-                <h2 className="text-h1 font-semibold text-text">How Nesti works</h2>
+                <h2 className="text-h1 font-semibold text-text">How Nesti AI works</h2>
                 <p className="text-body text-gray-60 mt-3 max-w-xl mx-auto">Up and running in days, not months. No complicated setup, no IT headaches.</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -599,7 +601,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
               <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
                 {CRM_LOGOS.map(c => <ClientLogo key={c.name} name={c.name} logoUrl={c.logoUrl} />)}
               </div>
-              <p className="text-body text-gray-50 mt-6">Nesti pushes call data, notes, and applicant scores directly into your existing CRM. No double data entry.</p>
+              <p className="text-body text-gray-50 mt-6">Nesti AI pushes call data, notes, and applicant scores directly into your existing CRM. No double data entry.</p>
             </div>
           </section>
         )
@@ -633,8 +635,8 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
               <div className="text-center mb-12">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4"><Icon name="mic" /></div>
                 <p className="text-caption font-medium text-primary uppercase tracking-wider mb-2">Hear it in action</p>
-                <h2 className="text-h1 font-semibold text-text">Real examples of Nesti&apos;s AI voice agent</h2>
-                <p className="text-body text-gray-60 mt-3 max-w-xl mx-auto">Listen to how Nesti handles real inbound calls — just like a senior negotiator would.</p>
+                <h2 className="text-h1 font-semibold text-text">Hear Nesti AI handle real calls</h2>
+                <p className="text-body text-gray-60 mt-3 max-w-xl mx-auto">Listen to how Nesti AI handles real inbound enquiries — exactly like a senior negotiator, available 24/7.</p>
               </div>
               <div className="max-w-3xl mx-auto">
                 <DriveEmbed label="Example call" urlValue={voiceUrl1} onSave={url => { setVoiceUrl1(url); persist({ voiceUrl1: url }) }} isEditor={isEditor} />
@@ -666,7 +668,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
         if (!slidesUrl && !isEditor) return null
         return (
           <IframeSection id="slides" icon="slides" title="Watch Our Presentation"
-            description={`See exactly how Nesti transforms call handling for agencies like ${editedData.agencyName}.`}
+            description={`See exactly how Nesti AI transforms call handling for agencies like ${editedData.agencyName}.`}
             placeholder="Paste your Google Slides share URL here"
             urlValue={slidesUrl} onSave={url => { setSlidesUrl(url); persist({ slidesUrl: url }) }}
             toEmbedUrl={toSlidesEmbedUrl} aspectRatio="56.25%" isEditor={isEditor} />
