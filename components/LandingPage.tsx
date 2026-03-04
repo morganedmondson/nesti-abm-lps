@@ -992,19 +992,19 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
       <footer style={{ background: '#0E121B' }} className="border-t border-white/10 pt-12 pb-8 px-6">
         <div className="max-w-6xl mx-auto">
           {/* Top row */}
-          <div className="flex flex-col md:flex-row items-start justify-between gap-10 mb-10">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-10 mb-10">
             {/* Brand */}
-            <div className="flex flex-col gap-4 max-w-xs">
+            <div className="flex flex-col items-start gap-4 w-full md:max-w-xs">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={NESTI_LOGO_URL} alt="Nesti AI" className="h-8 w-auto max-w-[160px] block object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
-              <p className="text-body text-white/40">AI-enabled call handling built for UK estate and letting agents. Never miss an enquiry.</p>
+              <img src={NESTI_LOGO_URL} alt="Nesti AI" className="h-8 w-auto max-w-[160px] object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
+              <p className="text-body text-white/40 max-w-xs">AI-enabled call handling built for UK estate and letting agents. Never miss an enquiry.</p>
               <a href={ctaUrl} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-small font-semibold rounded-lg hover:bg-primary-hover transition-colors w-fit">
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-small font-semibold rounded-lg hover:bg-primary-hover transition-colors">
                 Book a demo <Icon name="arrow-right" />
               </a>
             </div>
             {/* Links */}
-            <div className="flex gap-12 sm:gap-20">
+            <div className="flex gap-12 sm:gap-20 flex-shrink-0">
               <div>
                 <p className="text-caption font-semibold uppercase tracking-widest mb-4 text-white/30">Product</p>
                 <div className="flex flex-col gap-3">
@@ -1039,7 +1039,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
             </div>
           </div>
           {/* Bottom bar */}
-          <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3">
             <div className="flex flex-wrap items-center gap-2 text-caption text-white/30">
               {data.agencyLogoUrl && (
                 <span>Generated for <span className="text-white/50 font-medium">{editedData.agencyName}</span> ·</span>
