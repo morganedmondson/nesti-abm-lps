@@ -437,7 +437,8 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
       return next
     })
     setHiddenSections(prev => {
-      const next = new Set([...prev, id as SectionId])
+      const next = new Set(prev)
+      next.add(id as SectionId)
       persist({ hiddenSections: Array.from(next) })
       return next
     })
