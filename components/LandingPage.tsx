@@ -252,7 +252,7 @@ function IframeSection({ id, icon, title, description, placeholder, urlValue, on
   }
 
   return (
-    <section className="py-20 px-6 bg-surface border-y border-border">
+    <section className="py-12 sm:py-20 px-4 sm:px-6 bg-surface border-y border-border">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-10">
           <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4"><Icon name={icon} /></div>
@@ -274,7 +274,7 @@ function IframeSection({ id, icon, title, description, placeholder, urlValue, on
             )}
           </div>
         ) : (
-          <div className="border-2 border-dashed border-border rounded-xl p-12 text-center bg-gray-10">
+          <div className="border-2 border-dashed border-border rounded-xl p-6 sm:p-12 text-center bg-gray-10">
             {editing ? (
               <div className="max-w-lg mx-auto">
                 <p className="text-small font-medium text-text mb-3">Paste your {title} URL</p>
@@ -349,7 +349,7 @@ function DriveEmbed({ label, urlValue, onSave, isEditor = false }: { label: stri
         </div>
       ) : (
         <button onClick={() => { setDraft(''); setEditing(true) }}
-          className="border-2 border-dashed border-border rounded-xl p-10 text-center bg-gray-10 hover:bg-gray-20 transition-colors flex flex-col items-center gap-3">
+          className="border-2 border-dashed border-border rounded-xl p-6 sm:p-10 text-center bg-gray-10 hover:bg-gray-20 transition-colors flex flex-col items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center"><Icon name="video" /></div>
           <span className="text-small text-gray-50">Add Google Drive video</span>
         </button>
@@ -387,7 +387,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
   const [editMode, setEditMode] = useState(false)
   const [editedData, setEditedData] = useState<LandingPageData>(() => ({
     ...data,
-    ctaUrl: data.ctaUrl || 'https://www.nesti.io',
+    ctaUrl: data.ctaUrl || 'https://calendly.com/d/cr85-n67-nt9/nesti-ai-demo',
   }))
   const [publishStatus, setPublishStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [showSharePanel, setShowSharePanel] = useState(false)
@@ -523,7 +523,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
     switch (id) {
       case 'painPoints':
         return (
-          <section className="py-20 px-6">
+          <section className="py-12 sm:py-20 px-4 sm:px-6">
             <div className="max-w-6xl mx-auto">
               <div className="text-center mb-12">
                 <p className="text-caption font-medium text-primary uppercase tracking-wider mb-2">Sound familiar?</p>
@@ -546,7 +546,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
 
       case 'howItWorks':
         return (
-          <section className="py-20 px-6 bg-surface border-y border-border">
+          <section className="py-12 sm:py-20 px-4 sm:px-6 bg-surface border-y border-border">
             <div className="max-w-6xl mx-auto">
               <div className="text-center mb-12">
                 <p className="text-caption font-medium text-primary uppercase tracking-wider mb-2">Simple to get started</p>
@@ -570,7 +570,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
 
       case 'features':
         return (
-          <section className="py-20 px-6">
+          <section className="py-12 sm:py-20 px-4 sm:px-6">
             <div className="max-w-6xl mx-auto">
               <div className="text-center mb-12">
                 <p className="text-caption font-medium text-primary uppercase tracking-wider mb-2">Everything you need</p>
@@ -593,7 +593,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
 
       case 'integrations':
         return (
-          <section className="py-16 px-6 bg-gray-10 border-y border-border">
+          <section className="py-12 sm:py-16 px-4 sm:px-6 bg-gray-10 border-y border-border">
             <div className="max-w-6xl mx-auto text-center">
               <p className="text-caption font-medium text-gray-50 uppercase tracking-wider mb-6">Seamless CRM integrations</p>
               <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
@@ -606,7 +606,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
 
       case 'stats':
         return (
-          <section className="py-20 px-6 bg-surface border-b border-border">
+          <section className="py-12 sm:py-20 px-4 sm:px-6 bg-surface border-b border-border">
             <div className="max-w-6xl mx-auto">
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
                 {[
@@ -616,7 +616,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
                   { stat: '< 5 days', label: 'Average time to go live' },
                 ].map(item => (
                   <div key={item.stat} className="flex flex-col items-center">
-                    <span className="text-display font-bold text-primary leading-none mb-2">{item.stat}</span>
+                    <span className="text-h1 sm:text-display font-bold text-primary leading-none mb-2">{item.stat}</span>
                     <span className="text-small text-gray-60">{item.label}</span>
                   </div>
                 ))}
@@ -628,7 +628,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
       case 'voices':
         if (!voiceUrl1 && !isEditor) return null
         return (
-          <section className="py-20 px-6 bg-surface border-y border-border">
+          <section className="py-12 sm:py-20 px-4 sm:px-6 bg-surface border-y border-border">
             <div className="max-w-6xl mx-auto">
               <div className="text-center mb-12">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4"><Icon name="mic" /></div>
@@ -645,9 +645,9 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
 
       case 'testimonial':
         return (
-          <section className="py-20 px-6">
+          <section className="py-12 sm:py-20 px-4 sm:px-6">
             <div className="max-w-3xl mx-auto">
-              <div className="bg-surface border border-border rounded-xl p-10 shadow-elevated text-center">
+              <div className="bg-surface border border-border rounded-xl p-6 sm:p-10 shadow-elevated text-center">
                 <div className="text-primary/30 flex justify-center mb-6"><Icon name="quote" /></div>
                 <blockquote className="text-sub font-medium text-text mb-6 leading-relaxed">
                   &ldquo;{ef(editedData.testimonial.quote, v => updateTestimonial('quote', v))}&rdquo;
@@ -686,20 +686,20 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
 
   // ─── Render ──────────────────────────────────────────────────────────────────
 
-  const ctaUrl = editedData.ctaUrl || 'https://www.nesti.io'
+  const ctaUrl = editedData.ctaUrl || 'https://calendly.com/d/cr85-n67-nt9/nesti-ai-demo'
 
   return (
     <div className="min-h-screen bg-background font-sans">
 
       {/* ─── NAVBAR ─── */}
       <nav className="border-b border-border bg-surface/95 backdrop-blur-sm sticky top-0 z-20">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={NESTI_LOGO_URL} alt="Nesti" className="h-7 w-auto" />
+          <img src={NESTI_LOGO_URL} alt="Nesti" className="h-9 w-auto" />
           <div className="flex items-center gap-3">
             {data.agencyLogoUrl && (
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gray-10 border border-border rounded-full">
-                <AgencyLogo logoUrl={data.agencyLogoUrl} agencyName={editedData.agencyName} className="h-5 w-auto max-w-[80px]" />
+                <AgencyLogo logoUrl={data.agencyLogoUrl} agencyName={editedData.agencyName} className="h-8 w-auto max-w-[120px]" />
               </div>
             )}
             <a href={ctaUrl} target="_blank" rel="noopener noreferrer"
@@ -738,12 +738,12 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
                   <div className="flex items-center gap-1">
                     <input autoFocus type="url" value={ctaUrlDraft} onChange={e => setCtaUrlDraft(e.target.value)}
                       onKeyDown={e => {
-                        if (e.key === 'Enter') { updateData('ctaUrl', ctaUrlDraft.trim() || 'https://www.nesti.io'); setCtaUrlEditing(false) }
+                        if (e.key === 'Enter') { updateData('ctaUrl', ctaUrlDraft.trim() || 'https://calendly.com/d/cr85-n67-nt9/nesti-ai-demo'); setCtaUrlEditing(false) }
                         if (e.key === 'Escape') { setCtaUrlDraft(ctaUrl); setCtaUrlEditing(false) }
                       }}
                       placeholder="https://..."
                       className="w-48 px-2 py-1 border border-gray-30 rounded-lg bg-surface text-text text-caption focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
-                    <button onClick={() => { updateData('ctaUrl', ctaUrlDraft.trim() || 'https://www.nesti.io'); setCtaUrlEditing(false) }}
+                    <button onClick={() => { updateData('ctaUrl', ctaUrlDraft.trim() || 'https://calendly.com/d/cr85-n67-nt9/nesti-ai-demo'); setCtaUrlEditing(false) }}
                       className="p-1.5 bg-primary text-primary-contrast rounded-lg hover:bg-primary-hover"><Icon name="check" /></button>
                     <button onClick={() => { setCtaUrlDraft(ctaUrl); setCtaUrlEditing(false) }}
                       className="p-1.5 border border-border rounded-lg text-gray-60 hover:bg-gray-10"><Icon name="x" /></button>
@@ -822,7 +822,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
 
       {/* ─── HERO ─── */}
       <section className="bg-surface border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 py-20 text-center">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-20 text-center">
           <div className="flex items-center justify-center gap-4 mb-8">
             <AgencyLogo logoUrl={data.agencyLogoUrl} agencyName={editedData.agencyName} className="h-10 w-auto max-w-[120px]" />
             <span className="text-gray-40 text-h2 font-light">×</span>
@@ -835,7 +835,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
               {editedData.contactFirstName ? `For ${editedData.contactFirstName} at ` : 'Built for '}{editedData.agencyName} · {editedData.agencySpecialty}
             </span>
           </div>
-          <h1 className="text-display font-semibold text-text max-w-3xl mx-auto mb-6 leading-tight">
+          <h1 className="text-h1 sm:text-display font-semibold text-text max-w-3xl mx-auto mb-6 leading-tight">
             {ef(editedData.heroHeadline, v => updateData('heroHeadline', v))}
           </h1>
           <p className="text-sub text-gray-60 max-w-2xl mx-auto mb-10">

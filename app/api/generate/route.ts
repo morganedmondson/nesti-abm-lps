@@ -353,7 +353,7 @@ export async function POST(req: NextRequest) {
       agencyLogoUrl: scraped.logoUrl,
       contactName: firstName,
       contactFirstName: firstName,
-      ctaUrl: 'https://www.nesti.io',
+      ctaUrl: 'https://calendly.com/d/cr85-n67-nt9/nesti-ai-demo',
       sourceUrl: url,
       generatedAt: new Date().toISOString(),
     }
