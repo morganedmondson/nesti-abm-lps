@@ -13,6 +13,28 @@ function getAnthropicClient() {
 
 // In-memory store — persists for the lifetime of the server process.
 const store = new Map<string, LandingPageData>()
+const slugToId = new Map<string, string>()
+
+const RESERVED_SLUGS = new Set(['api', 'preview', '_next', 'favicon.ico', 'robots.txt'])
+
+function generateSlug(agencyName: string): string {
+  return agencyName
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .slice(0, 60)
+}
+
+function uniqueSlug(base: string): string {
+  let slug = base
+  if (RESERVED_SLUGS.has(slug) || slugToId.has(slug)) {
+    let i = 2
+    while (slugToId.has(`${base}-${i}`)) i++
+    slug = `${base}-${i}`
+  }
+  return slug
+}
 
 interface LandingPageData {
   agencyName: string
@@ -296,9 +318,11 @@ export async function POST(req: NextRequest) {
     }
 
     const id = uuidv4()
+    const slug = uniqueSlug(generateSlug(fullData.agencyName))
     store.set(id, fullData)
+    slugToId.set(slug, id)
 
-    return NextResponse.json({ id, agencyName: fullData.agencyName })
+    return NextResponse.json({ id, slug, agencyName: fullData.agencyName })
   } catch (err) {
     console.error('[/api/generate]', err)
     const message = err instanceof Error ? err.message : 'An unexpected error occurred.'
@@ -307,6 +331,15 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  const slug = req.nextUrl.searchParams.get('slug')
+  if (slug) {
+    const resolvedId = slugToId.get(slug)
+    if (!resolvedId) return NextResponse.json({ error: 'Not found.' }, { status: 404 })
+    const data = store.get(resolvedId)
+    if (!data) return NextResponse.json({ error: 'Not found.' }, { status: 404 })
+    return NextResponse.json({ id: resolvedId, ...data })
+  }
+
   const id = req.nextUrl.searchParams.get('id')
   if (!id || !/^[0-9a-f-]{36}$/.test(id)) {
     return NextResponse.json({ error: 'Invalid id.' }, { status: 400 })

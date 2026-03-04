@@ -499,7 +499,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
   }
 
   async function handleCopyLink() {
-    const url = `${window.location.origin}/preview/${pageId}`
+    const url = `${window.location.origin}${window.location.pathname.replace(/\?.*$/, '')}`
     try {
       await navigator.clipboard.writeText(url)
       setCopied(true)
@@ -798,13 +798,13 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
               <Icon name="check" />
               <span className="text-caption font-medium text-green-800 flex-1 truncate">
                 Page published. Share this link with your contact:
-                <span className="ml-2 font-mono text-green-700">{typeof window !== 'undefined' ? `${window.location.origin}/preview/${pageId}` : ''}</span>
+                <span className="ml-2 font-mono text-green-700">{typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname.replace(/\?.*$/, '')}` : ''}</span>
               </span>
               <button onClick={handleCopyLink}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-green-200 rounded-lg text-caption font-medium text-green-800 hover:bg-green-50 transition-colors flex-shrink-0">
                 <Icon name="copy" />{copied ? 'Copied!' : 'Copy link'}
               </button>
-              <a href={`/preview/${pageId}`} target="_blank" rel="noopener noreferrer"
+              <a href={window.location.pathname.replace(/\?.*$/, '')} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-green-200 rounded-lg text-caption font-medium text-green-800 hover:bg-green-50 transition-colors flex-shrink-0">
                 <Icon name="external-link" />Open
               </a>

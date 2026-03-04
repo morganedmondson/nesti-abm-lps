@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 
 interface RecentGenerate {
   id: string
+  slug: string
   agencyName: string
   sourceUrl: string
   generatedAt: string
@@ -24,6 +25,7 @@ interface BatchResult {
   firstName: string | null
   agencyName: string
   id: string | null
+  slug: string | null
   status: BatchStatus
   error?: string
 }
@@ -101,11 +103,11 @@ export default function HomePage() {
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Something went wrong. Please try again.'); return }
 
-      const newRecent: RecentGenerate = { id: data.id, agencyName: data.agencyName, sourceUrl: parsedUrl, generatedAt: new Date().toISOString() }
+      const newRecent: RecentGenerate = { id: data.id, slug: data.slug, agencyName: data.agencyName, sourceUrl: parsedUrl, generatedAt: new Date().toISOString() }
       const updated = [newRecent, ...recents.filter(r => r.sourceUrl !== parsedUrl)].slice(0, 8)
       setRecents(updated)
       localStorage.setItem('nesti-recents', JSON.stringify(updated))
-      router.push(`/preview/${data.id}?edit`)
+      router.push(`/${data.slug}?edit`)
     } catch {
       setError('Network error. Please check your connection and try again.')
     } finally {
@@ -134,7 +136,7 @@ export default function HomePage() {
     setBatchRunning(true)
     setBatchIndex(0)
 
-    const results: BatchResult[] = batchRows.map(r => ({ ...r, agencyName: '', id: null, status: 'pending' as BatchStatus }))
+    const results: BatchResult[] = batchRows.map(r => ({ ...r, agencyName: '', id: null, slug: null, status: 'pending' as BatchStatus }))
     setBatchResults([...results])
 
     for (let i = 0; i < batchRows.length; i++) {
@@ -160,7 +162,7 @@ export default function HomePage() {
         if (!res.ok) {
           results[i] = { ...results[i], status: 'failed', error: data.error || 'Generation failed' }
         } else {
-          results[i] = { ...results[i], agencyName: data.agencyName, id: data.id, status: 'done' }
+          results[i] = { ...results[i], agencyName: data.agencyName, id: data.id, slug: data.slug, status: 'done' }
         }
       } catch (err) {
         results[i] = { ...results[i], status: 'failed', error: err instanceof Error ? err.message : 'Network error' }
@@ -177,7 +179,7 @@ export default function HomePage() {
   function downloadBatchResults() {
     const header = 'id,agencyName,sourceUrl,previewUrl,status\n'
     const rows = batchResults.map(r =>
-      `"${r.id || ''}","${r.agencyName || ''}","${r.url}","${r.id ? `${window.location.origin}/preview/${r.id}` : ''}","${r.status}"`
+      `"${r.id || ''}","${r.agencyName || ''}","${r.url}","${r.slug ? `${window.location.origin}/${r.slug}` : ''}","${r.status}"`
     ).join('\n')
     downloadCSV(header + rows, 'nesti-batch-results.csv')
   }
@@ -189,8 +191,9 @@ export default function HomePage() {
     )
   }
 
-  async function copyLink(id: string) {
-    try { await navigator.clipboard.writeText(`${window.location.origin}/preview/${id}`) } catch { /* ignore */ }
+  async function copyLink(slug: string | null, id: string | null) {
+    const path = slug ? `/${slug}` : `/preview/${id}`
+    try { await navigator.clipboard.writeText(`${window.location.origin}${path}`) } catch { /* ignore */ }
   }
 
   const doneCount = batchResults.filter(r => r.status === 'done').length
@@ -310,7 +313,7 @@ export default function HomePage() {
                   <p className="text-caption font-medium text-gray-60 uppercase tracking-wider mb-3">Recent pages</p>
                   <div className="flex flex-col gap-2">
                     {recents.map(recent => (
-                      <a key={recent.id} href={`/preview/${recent.id}?edit`}
+                      <a key={recent.id} href={`/${recent.slug || `preview/${recent.id}`}?edit`}
                         className="flex items-center justify-between p-3 bg-surface border border-border rounded-xl hover:border-gray-40 hover:shadow-soft transition-all duration-150 group">
                         <div>
                           <p className="text-small font-medium text-text group-hover:text-primary transition-colors">{recent.agencyName}</p>
@@ -474,11 +477,11 @@ export default function HomePage() {
                         </div>
                         {result.status === 'done' && result.id && (
                           <div className="flex items-center gap-1 flex-shrink-0">
-                            <button onClick={() => copyLink(result.id!)} title="Copy link"
+                            <button onClick={() => copyLink(result.slug, result.id)} title="Copy link"
                               className="p-1.5 text-gray-40 hover:text-primary border border-transparent hover:border-border rounded-lg transition-all">
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
                             </button>
-                            <a href={`/preview/${result.id}?edit`} target="_blank" rel="noopener noreferrer" title="Open page"
+                            <a href={`/${result.slug || `preview/${result.id}`}?edit`} target="_blank" rel="noopener noreferrer" title="Open page"
                               className="p-1.5 text-gray-40 hover:text-primary border border-transparent hover:border-border rounded-lg transition-all">
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                             </a>
