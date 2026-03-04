@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import * as cheerio from 'cheerio'
 import { v4 as uuidv4 } from 'uuid'
+import { Redis } from '@upstash/redis'
 
 function getAnthropicClient() {
   const apiKey = process.env.ANTHROPIC_API_KEY
@@ -11,9 +12,36 @@ function getAnthropicClient() {
   return new Anthropic({ apiKey })
 }
 
-// In-memory store — persists for the lifetime of the server process.
-const store = new Map<string, LandingPageData>()
-const slugToId = new Map<string, string>()
+// ─── Persistent storage (Upstash Redis) with in-memory fallback for local dev ─
+
+const redis = (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+  ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
+  : null
+
+const memStore = new Map<string, LandingPageData>()
+const memSlugs = new Map<string, string>()
+
+const pageKey = (id: string) => `nesti:page:${id}`
+const slugKey = (s: string) => `nesti:slug:${s}`
+
+async function savePage(id: string, data: LandingPageData): Promise<void> {
+  if (redis) { await redis.set(pageKey(id), data) } else { memStore.set(id, data) }
+}
+async function getPage(id: string): Promise<LandingPageData | null> {
+  if (redis) return redis.get<LandingPageData>(pageKey(id))
+  return memStore.get(id) ?? null
+}
+async function saveSlug(slug: string, id: string): Promise<void> {
+  if (redis) { await redis.set(slugKey(slug), id) } else { memSlugs.set(slug, id) }
+}
+async function getSlugId(slug: string): Promise<string | null> {
+  if (redis) return redis.get<string>(slugKey(slug))
+  return memSlugs.get(slug) ?? null
+}
+async function slugTaken(slug: string): Promise<boolean> {
+  if (redis) return (await redis.exists(slugKey(slug))) > 0
+  return memSlugs.has(slug)
+}
 
 const RESERVED_SLUGS = new Set(['api', 'preview', '_next', 'favicon.ico', 'robots.txt'])
 
@@ -26,14 +54,11 @@ function generateSlug(agencyName: string): string {
     .slice(0, 60)
 }
 
-function uniqueSlug(base: string): string {
-  let slug = base
-  if (RESERVED_SLUGS.has(slug) || slugToId.has(slug)) {
-    let i = 2
-    while (slugToId.has(`${base}-${i}`)) i++
-    slug = `${base}-${i}`
-  }
-  return slug
+async function uniqueSlug(base: string): Promise<string> {
+  if (!RESERVED_SLUGS.has(base) && !await slugTaken(base)) return base
+  let i = 2
+  while (await slugTaken(`${base}-${i}`)) i++
+  return `${base}-${i}`
 }
 
 interface LandingPageData {
@@ -318,9 +343,9 @@ export async function POST(req: NextRequest) {
     }
 
     const id = uuidv4()
-    const slug = uniqueSlug(generateSlug(fullData.agencyName))
-    store.set(id, fullData)
-    slugToId.set(slug, id)
+    const slug = await uniqueSlug(generateSlug(fullData.agencyName))
+    await savePage(id, fullData)
+    await saveSlug(slug, id)
 
     return NextResponse.json({ id, slug, agencyName: fullData.agencyName })
   } catch (err) {
@@ -333,9 +358,9 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const slug = req.nextUrl.searchParams.get('slug')
   if (slug) {
-    const resolvedId = slugToId.get(slug)
+    const resolvedId = await getSlugId(slug)
     if (!resolvedId) return NextResponse.json({ error: 'Not found.' }, { status: 404 })
-    const data = store.get(resolvedId)
+    const data = await getPage(resolvedId)
     if (!data) return NextResponse.json({ error: 'Not found.' }, { status: 404 })
     return NextResponse.json({ id: resolvedId, ...data })
   }
@@ -344,10 +369,8 @@ export async function GET(req: NextRequest) {
   if (!id || !/^[0-9a-f-]{36}$/.test(id)) {
     return NextResponse.json({ error: 'Invalid id.' }, { status: 400 })
   }
-  const data = store.get(id)
-  if (!data) {
-    return NextResponse.json({ error: 'Not found.' }, { status: 404 })
-  }
+  const data = await getPage(id)
+  if (!data) return NextResponse.json({ error: 'Not found.' }, { status: 404 })
   return NextResponse.json(data)
 }
 
@@ -356,7 +379,7 @@ export async function PUT(req: NextRequest) {
   if (!id || !/^[0-9a-f-]{36}$/.test(id)) {
     return NextResponse.json({ error: 'Invalid id.' }, { status: 400 })
   }
-  const existing = store.get(id)
+  const existing = await getPage(id)
   if (!existing) {
     return NextResponse.json({ error: 'Not found.' }, { status: 404 })
   }
@@ -371,7 +394,7 @@ export async function PUT(req: NextRequest) {
     for (const key of allowed) {
       if (key in updates) (filtered as Record<string, unknown>)[key] = updates[key]
     }
-    store.set(id, { ...existing, ...filtered })
+    await savePage(id, { ...existing, ...filtered })
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 })
