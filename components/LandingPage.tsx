@@ -468,8 +468,16 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
   }, [storageKey])
 
   useEffect(() => {
-    setIsEditor(new URLSearchParams(window.location.search).has('edit'))
-  }, [])
+    const isEd = new URLSearchParams(window.location.search).has('edit')
+    setIsEditor(isEd)
+    if (!isEd) {
+      fetch('/api/analytics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ page_id: pageId, agency_name: data.agencyName, event_type: 'page_view' }),
+      }).catch(() => {})
+    }
+  }, [pageId, data.agencyName])
 
   const persist = useCallback((updates: Partial<{
     sections: SectionId[]; hiddenSections: SectionId[]
@@ -569,6 +577,15 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
 
   function ef(value: string, onSave: (v: string) => void) {
     return <EditableField value={value} onSave={onSave} editMode={editMode} />
+  }
+
+  function trackEvent(eventType: string) {
+    if (isEditor) return
+    fetch('/api/analytics', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ page_id: pageId, agency_name: editedData.agencyName, event_type: eventType }),
+    }).catch(() => {})
   }
 
   // ─── Section renderers ───────────────────────────────────────────────────────
@@ -794,6 +811,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
               </div>
             )}
             <a href={ctaUrl} target="_blank" rel="noopener noreferrer"
+              onClick={() => trackEvent('cta_click')}
               className="px-4 py-2 bg-primary text-primary-contrast text-small font-semibold rounded-lg shadow-sm hover:bg-primary-hover hover:shadow-md hover:-translate-y-px active:bg-primary-active active:translate-y-0 transition-all duration-150">
               Book a demo
             </a>
@@ -940,10 +958,12 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <a href={ctaUrl} target="_blank" rel="noopener noreferrer"
+              onClick={() => trackEvent('cta_click')}
               className="px-6 py-3 bg-primary text-primary-contrast text-body font-semibold rounded-lg shadow-sm hover:bg-primary-hover hover:shadow-md hover:-translate-y-px active:bg-primary-active active:translate-y-0 transition-all duration-150 flex items-center gap-2 w-full sm:w-auto justify-center">
               Book a Free Demo <Icon name="arrow-right" />
             </a>
             <a href="tel:+447727638641"
+              onClick={() => trackEvent('phone_click')}
               className="px-6 py-3 text-body font-medium text-text bg-surface border border-border rounded-lg hover:bg-gray-10 hover:border-gray-40 hover:shadow-sm hover:-translate-y-px active:bg-gray-20 active:translate-y-0 transition-all duration-150 w-full sm:w-auto text-center flex items-center gap-2 justify-center">
               <Icon name="phone" />Try it — call our AI now
             </a>
@@ -999,6 +1019,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
               <img src={NESTI_LOGO_URL} alt="Nesti AI" className="h-8 w-auto max-w-[160px] object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
               <p className="text-body text-white/40 max-w-xs">AI-enabled call handling built for UK estate and letting agents. Never miss an enquiry.</p>
               <a href={ctaUrl} target="_blank" rel="noopener noreferrer"
+                onClick={() => trackEvent('cta_click')}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-small font-semibold rounded-lg hover:bg-primary-hover transition-colors">
                 Book a demo <Icon name="arrow-right" />
               </a>

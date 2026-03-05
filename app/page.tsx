@@ -30,6 +30,21 @@ interface BatchResult {
   error?: string
 }
 
+interface AnalyticsRow {
+  page_id: string
+  agency_name: string
+  views: number
+  cta_clicks: number
+  phone_clicks: number
+  last_seen: string
+}
+
+interface AnalyticsTotals {
+  views: number
+  cta_clicks: number
+  phone_clicks: number
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function parseCSV(text: string): BatchRow[] {
@@ -60,7 +75,7 @@ export default function HomePage() {
   const [authed, setAuthed] = useState(false)
   const [password, setPassword] = useState('')
   const [authError, setAuthError] = useState('')
-  const [activeTab, setActiveTab] = useState<'single' | 'batch'>('single')
+  const [activeTab, setActiveTab] = useState<'single' | 'batch' | 'analytics'>('single')
 
   // Single form state
   const [url, setUrl] = useState('')
@@ -76,6 +91,12 @@ export default function HomePage() {
   const [batchIndex, setBatchIndex] = useState(0)
   const stopRef = useRef(false)
 
+  // Analytics state
+  const [analyticsRows, setAnalyticsRows] = useState<AnalyticsRow[]>([])
+  const [analyticsTotals, setAnalyticsTotals] = useState<AnalyticsTotals>({ views: 0, cta_clicks: 0, phone_clicks: 0 })
+  const [analyticsLoading, setAnalyticsLoading] = useState(false)
+  const [analyticsError, setAnalyticsError] = useState('')
+
   useEffect(() => {
     setMounted(true)
     try {
@@ -90,6 +111,11 @@ export default function HomePage() {
       if (stored) setBatchResults(JSON.parse(stored))
     } catch { /* ignore */ }
   }, [])
+
+  useEffect(() => {
+    if (activeTab === 'analytics') fetchAnalytics()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab])
 
   // ─── Auth ──────────────────────────────────────────────────────────────────
 
@@ -218,6 +244,22 @@ export default function HomePage() {
     try { localStorage.removeItem('nesti-batch-results') } catch { /* ignore */ }
   }
 
+  async function fetchAnalytics() {
+    setAnalyticsLoading(true)
+    setAnalyticsError('')
+    try {
+      const res = await fetch('/api/analytics')
+      if (!res.ok) throw new Error('Failed to load analytics')
+      const data = await res.json()
+      setAnalyticsRows(data.rows ?? [])
+      setAnalyticsTotals(data.totals ?? { views: 0, cta_clicks: 0, phone_clicks: 0 })
+    } catch {
+      setAnalyticsError('Could not load analytics data.')
+    } finally {
+      setAnalyticsLoading(false)
+    }
+  }
+
   async function copyLink(slug: string | null, id: string | null) {
     const path = slug ? `/${slug}` : `/preview/${id}`
     try { await navigator.clipboard.writeText(`${window.location.origin}${path}`) } catch { /* ignore */ }
@@ -293,6 +335,10 @@ export default function HomePage() {
             <button onClick={() => setActiveTab('batch')}
               className={`px-5 py-2 text-small font-medium rounded-lg transition-all duration-150 ${activeTab === 'batch' ? 'bg-surface shadow-soft text-text' : 'text-gray-60 hover:text-text'}`}>
               Batch CSV
+            </button>
+            <button onClick={() => setActiveTab('analytics')}
+              className={`px-5 py-2 text-small font-medium rounded-lg transition-all duration-150 ${activeTab === 'analytics' ? 'bg-surface shadow-soft text-text' : 'text-gray-60 hover:text-text'}`}>
+              Analytics
             </button>
           </div>
 
@@ -552,6 +598,91 @@ export default function HomePage() {
                         )}
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {/* ─── ANALYTICS TAB ─── */}
+          {activeTab === 'analytics' && (
+            <div className="flex flex-col gap-5">
+              <div className="flex items-center justify-between">
+                <p className="text-caption text-gray-50">Last 30 days</p>
+                <button onClick={fetchAnalytics} disabled={analyticsLoading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-caption font-medium text-gray-60 border border-border rounded-lg hover:bg-gray-10 disabled:opacity-50 transition-colors">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-3.5 h-3.5 ${analyticsLoading ? 'animate-spin' : ''}`}>
+                    <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                  </svg>
+                  Refresh
+                </button>
+              </div>
+
+              {analyticsError && (
+                <div className="p-3 bg-destructive/5 border border-destructive/20 rounded-lg text-destructive text-small">{analyticsError}</div>
+              )}
+
+              {/* Summary cards */}
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: 'Page views', value: analyticsTotals.views, color: 'text-primary', bg: 'bg-primary/5 border-primary/20' },
+                  { label: 'Demo clicks', value: analyticsTotals.cta_clicks, color: 'text-green-600', bg: 'bg-green-50 border-green-200' },
+                  { label: 'Phone clicks', value: analyticsTotals.phone_clicks, color: 'text-amber-600', bg: 'bg-amber-50 border-amber-200' },
+                ].map(card => (
+                  <div key={card.label} className={`${card.bg} border rounded-xl p-4 text-center`}>
+                    <p className={`text-h2 font-semibold ${card.color}`}>{analyticsLoading ? '—' : card.value}</p>
+                    <p className="text-caption text-gray-50 mt-0.5">{card.label}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Per-page table */}
+              {!analyticsLoading && analyticsRows.length === 0 && !analyticsError && (
+                <div className="text-center py-12 text-gray-40 text-small">No data yet — views and clicks will appear here once pages are opened.</div>
+              )}
+
+              {analyticsRows.length > 0 && (
+                <div className="bg-surface border border-border rounded-xl shadow-soft overflow-hidden">
+                  <div className="px-4 py-3 border-b border-border">
+                    <h2 className="text-small font-semibold text-text">{analyticsRows.length} {analyticsRows.length === 1 ? 'page' : 'pages'} tracked</h2>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-10">
+                        <tr>
+                          <th className="text-left px-4 py-2.5 text-caption font-medium text-gray-60">Agency</th>
+                          <th className="text-right px-4 py-2.5 text-caption font-medium text-gray-60">Views</th>
+                          <th className="text-right px-4 py-2.5 text-caption font-medium text-gray-60">Demo clicks</th>
+                          <th className="text-right px-4 py-2.5 text-caption font-medium text-gray-60">Phone clicks</th>
+                          <th className="text-right px-4 py-2.5 text-caption font-medium text-gray-60">Last seen</th>
+                          <th className="px-4 py-2.5 w-8" />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {analyticsRows.map((row, i) => (
+                          <tr key={row.page_id} className={`border-t border-border ${i % 2 === 1 ? 'bg-gray-10/50' : ''}`}>
+                            <td className="px-4 py-3 text-small text-text font-medium">{row.agency_name}</td>
+                            <td className="px-4 py-3 text-small text-text text-right tabular-nums">{row.views}</td>
+                            <td className="px-4 py-3 text-small text-right tabular-nums">
+                              <span className={row.cta_clicks > 0 ? 'text-green-600 font-medium' : 'text-gray-40'}>{row.cta_clicks}</span>
+                            </td>
+                            <td className="px-4 py-3 text-small text-right tabular-nums">
+                              <span className={row.phone_clicks > 0 ? 'text-amber-600 font-medium' : 'text-gray-40'}>{row.phone_clicks}</span>
+                            </td>
+                            <td className="px-4 py-3 text-caption text-gray-50 text-right whitespace-nowrap">
+                              {new Date(row.last_seen).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                            </td>
+                            <td className="px-4 py-3">
+                              <a href={`/preview/${row.page_id}`} target="_blank" rel="noopener noreferrer"
+                                className="p-1.5 text-gray-40 hover:text-primary border border-transparent hover:border-border rounded-lg transition-all block">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+                                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                                </svg>
+                              </a>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
