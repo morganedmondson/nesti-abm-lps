@@ -38,22 +38,38 @@ export async function POST(req: NextRequest) {
 
 // ─── GET /api/analytics — return aggregated stats (last 30 days) ──────────────
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url)
+    const filterPageId = searchParams.get('page_id')
     const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
 
     let events: Array<{ page_id: string; agency_name: string; event_type: string; created_at: string }>
 
     if (supabase) {
-      const { data } = await supabase
+      let query = supabase
         .from('nesti_events')
         .select('page_id, agency_name, event_type, created_at')
         .gte('created_at', cutoff)
         .order('created_at', { ascending: false })
         .limit(10000)
+      if (filterPageId) query = query.eq('page_id', filterPageId)
+      const { data } = await query
       events = (data ?? []) as typeof events
     } else {
-      events = memEvents.filter(e => e.created_at >= cutoff)
+      events = memEvents.filter(e => e.created_at >= cutoff && (!filterPageId || e.page_id === filterPageId))
+    }
+
+    // Single-page mode: return compact stats
+    if (filterPageId) {
+      let views = 0, cta_clicks = 0, phone_clicks = 0, last_seen = ''
+      for (const e of events) {
+        if (e.event_type === 'page_view') views++
+        else if (e.event_type === 'cta_click') cta_clicks++
+        else if (e.event_type === 'phone_click') phone_clicks++
+        if (e.created_at > last_seen) last_seen = e.created_at
+      }
+      return NextResponse.json({ views, cta_clicks, phone_clicks, last_seen: last_seen || null })
     }
 
     // Aggregate by page_id

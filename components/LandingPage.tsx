@@ -445,6 +445,7 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
   }))
   const [publishStatus, setPublishStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [showSharePanel, setShowSharePanel] = useState(false)
+  const [pageStats, setPageStats] = useState<{ views: number; cta_clicks: number; phone_clicks: number; last_seen: string | null } | null>(null)
   const [copied, setCopied] = useState(false)
   const [showRestoreMenu, setShowRestoreMenu] = useState(false)
   const [ctaUrlEditing, setCtaUrlEditing] = useState(false)
@@ -476,6 +477,11 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ page_id: pageId, agency_name: data.agencyName, event_type: 'page_view' }),
       }).catch(() => {})
+    } else {
+      fetch(`/api/analytics?page_id=${encodeURIComponent(pageId)}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setPageStats(d) })
+        .catch(() => {})
     }
   }, [pageId, data.agencyName])
 
@@ -924,6 +930,30 @@ export default function LandingPage({ data, pageId }: { data: LandingPageData; p
               <button onClick={() => setShowSharePanel(false)} className="text-green-600 hover:text-green-800 transition-colors flex-shrink-0">
                 <Icon name="x" />
               </button>
+            </div>
+          )}
+
+          {/* Per-page analytics strip */}
+          {pageStats && (
+            <div className="flex items-center gap-4 px-3 py-2 bg-gray-50 border border-border rounded-xl text-caption text-text-secondary">
+              <span className="font-medium text-text">Last 30 days:</span>
+              <span className="flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 text-primary" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/></svg>
+                <strong className="text-text">{pageStats.views}</strong> views
+              </span>
+              <span className="flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 text-green-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/></svg>
+                <strong className="text-text">{pageStats.cta_clicks}</strong> demo clicks
+              </span>
+              <span className="flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 text-amber-500" viewBox="0 0 20 20" fill="currentColor"><path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/></svg>
+                <strong className="text-text">{pageStats.phone_clicks}</strong> phone calls
+              </span>
+              {pageStats.last_seen && (
+                <span className="ml-auto text-text-tertiary">
+                  Last activity {new Date(pageStats.last_seen).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                </span>
+              )}
             </div>
           )}
         </div>
