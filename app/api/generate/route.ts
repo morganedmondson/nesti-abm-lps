@@ -231,10 +231,15 @@ ABOUT NESTI AI:
 - 50+ estate agent clients including Fine & Country, Persimmon Homes, Richard James, Smart Property Group, Quealy & Co, Hunters
 - Always available. Never off sick, never on lunch, never engaged. Truly 24/7 AI-powered availability.
 
+KEY POSITIONING (weave these naturally throughout the copy — do not repeat them mechanically):
+1. OVERFLOW AND OUT-OF-HOURS: Nesti AI is the perfect overflow solution for when the team is busy, on viewings, or unavailable. It also handles every out-of-hours call so no enquiry is ever lost outside of 9-5. Position this as a complement to the team, not a replacement.
+2. BETTER THAN CALL CENTRES, AT A FRACTION OF THE COST: Nesti AI is five times cheaper than a traditional call centre and captures far more accurate, useful information. Call centres use scripts and rely on untrained staff who don't understand property. Nesti AI asks the right property-specific questions every single time and delivers structured, actionable data. The result is better quality information with zero human error, at a fraction of the cost.
+3. DATA ACCURACY: Unlike a call centre operative or a missed voicemail, Nesti AI captures every detail consistently and accurately. No misheard names. No missed requirements. No vague notes. Just clean, structured data delivered straight to the team and into the CRM.
+
 YOUR TASK:
 Write a compelling, personalised landing page that sells Nesti AI to the specific estate or letting agency described in the scraped content. Make it feel like it was written just for them. Always refer to the product as "Nesti AI" — never just "Nesti".
 
-TONE: Professional, confident, specific. Reference their location, property types, or scale when possible. Focus on real business outcomes (more enquiries captured, less admin, better quality applicants, buyers, sellers, vendors, landlords and tenants through the door). Make it clear that Nesti AI is an intelligent AI solution, not a call centre or generic answering service.
+TONE: Professional, confident, specific. Reference their location, property types, or scale when possible. Focus on real business outcomes (more enquiries captured, less admin, better quality applicants, buyers, sellers, vendors, landlords and tenants through the door). Make it clear that Nesti AI is an intelligent AI solution, not a call centre or generic answering service. Naturally surface the overflow, out-of-hours, cost, and data accuracy angles where they fit.
 
 WRITING RULES (follow these strictly):
 - Always write "Nesti AI" not just "Nesti"
@@ -254,9 +259,9 @@ RETURN: A single valid JSON object matching this exact schema — no markdown, n
   "heroHeadline": "string — compelling headline (max 12 words) that mentions their name or location",
   "heroSubheadline": "string — 1-2 sentences expanding on the headline, specific to their business. Must make clear this is an AI solution.",
   "painPoints": [
-    { "headline": "string", "description": "string — 1-2 sentences" },
-    { "headline": "string", "description": "string — 1-2 sentences" },
-    { "headline": "string", "description": "string — 1-2 sentences" }
+    { "headline": "string — pain point about missed calls, out-of-hours enquiries, or the team being unavailable", "description": "string — 1-2 sentences specific to this agency" },
+    { "headline": "string — pain point about call centre costs, inaccurate data, or unreliable outsourced staff", "description": "string — 1-2 sentences specific to this agency" },
+    { "headline": "string — pain point about lost enquiries or poor caller experience when the team is busy or on viewings", "description": "string — 1-2 sentences specific to this agency" }
   ],
   "howItWorks": [
     { "step": "01", "title": "string", "description": "string — 1 sentence" },
@@ -264,11 +269,11 @@ RETURN: A single valid JSON object matching this exact schema — no markdown, n
     { "step": "03", "title": "string", "description": "string — 1 sentence" }
   ],
   "features": [
-    { "icon": "phone", "title": "string", "description": "string — 1-2 sentences" },
-    { "icon": "star", "title": "string", "description": "string — 1-2 sentences" },
-    { "icon": "zap", "title": "string", "description": "string — 1-2 sentences" },
-    { "icon": "mail", "title": "string", "description": "string — 1-2 sentences" },
-    { "icon": "link", "title": "string", "description": "string — 1-2 sentences" },
+    { "icon": "phone", "title": "string — about overflow and out-of-hours call handling", "description": "string — 1-2 sentences: Nesti AI steps in whenever the team is unavailable, on viewings, or outside office hours so no call ever goes unanswered" },
+    { "icon": "star", "title": "string — about data accuracy and quality of information captured", "description": "string — 1-2 sentences: every call produces clean, structured, accurate data with no misheard details or vague notes" },
+    { "icon": "zap", "title": "string — about cost vs call centres", "description": "string — 1-2 sentences: five times cheaper than a traditional call centre, with better outcomes and no untrained staff mishandling property enquiries" },
+    { "icon": "mail", "title": "string — about instant email summaries to staff", "description": "string — 1-2 sentences" },
+    { "icon": "link", "title": "string — about CRM integrations", "description": "string — 1-2 sentences" },
     { "icon": "settings", "title": "Deep customisation", "description": "string — 1-2 sentences about how Nesti AI can be configured to sound and behave exactly like your best negotiator, tailored to the specific agency's brand, tone, and process" }
   ],
   "testimonial": {
